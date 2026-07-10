@@ -31,6 +31,16 @@ let lastResult = null;
 let interviewIndex = 0;
 let interviewAnswers = [];
 
+function trackEvent(name, params = {}) {
+  try {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", name, params);
+    }
+  } catch (error) {
+    console.warn("Analytics event failed", error);
+  }
+}
+
 const qs = (s, r=document) => r.querySelector(s);
 const qsa = (s, r=document) => [...r.querySelectorAll(s)];
 const clone = id => document.getElementById(id).innerHTML;
@@ -159,7 +169,7 @@ document.getElementById("submitAdminLogin").onclick = async ()=>{
     document.getElementById("adminLoginModal").classList.add("hidden");
     renderAdmin();
   }catch(e){
-  errorEl.textContent = e.code + " — " + e.message;
+    errorEl.textContent = "ელფოსტა ან პაროლი არასწორია.";
     errorEl.classList.remove("hidden");
   }
 };
@@ -173,6 +183,7 @@ if(window.firebase){
 }
 
 function renderHome(){
+  trackEvent("home_view");
   app.innerHTML = clone("homeTemplate");
   qsa("[data-action='assessment']",app).forEach(b=>b.onclick=()=>{step=0;answers={};renderAssessment();});
   qsa("[data-action='interview']",app).forEach(b=>b.onclick=startInterview);
@@ -198,6 +209,7 @@ function maskName(name){
 }
 
 function renderAssessment(){
+  if(step === 0) trackEvent("assessment_start");
   app.innerHTML = clone("assessmentTemplate");
   const s = sections[step];
   qs("#stepLabel",app).textContent = `ეტაპი ${step+1} / ${sections.length}`;
@@ -396,6 +408,7 @@ function buildPrep(a, risks){
 function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
 
 async function finishAssessment(){
+  trackEvent("assessment_complete");
   const result=scoreAssessment(answers);
   lastResult=result;
   const record={...answers,score:result.score,riskLevel:result.riskLevel,createdAt:new Date().toISOString(),status:"New"};
@@ -474,6 +487,7 @@ function getInterviewQuestions(){
 }
 
 function startInterview(){
+  trackEvent("interview_start");
   interviewIndex=0;interviewAnswers=[];renderInterview();
 }
 
@@ -530,6 +544,7 @@ function analyzeInterview(items){
 }
 
 function renderDs160(){
+  trackEvent("ds160_checker_open");
   app.innerHTML=clone("ds160Template");
   qs("#dsBackBtn",app).onclick=renderHome;
   qs("#checkDsBtn",app).onclick=()=>{
@@ -638,3 +653,8 @@ function exportCsv(list){
 }
 
 renderHome();
+
+document.addEventListener("click", (event) => {
+  const link = event.target.closest('a[href*="wa.me"]');
+  if (link) trackEvent("whatsapp_click", { location: window.location.pathname });
+});
