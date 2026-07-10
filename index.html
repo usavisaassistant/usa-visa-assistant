@@ -280,7 +280,7 @@
           <span class="eyebrow">CRM DASHBOARD</span>
           <h2>აპლიკანტების მართვა</h2>
         </div>
-        <button class="secondary" id="adminHomeBtn">მთავარი</button>
+        <div class="admin-head-actions"><button class="secondary" id="adminHomeBtn">მთავარი</button><button class="danger" id="adminLogoutBtn">გასვლა</button></div>
       </div>
 
       <div class="stats-grid" id="statsGrid"></div>
@@ -300,8 +300,31 @@
     </section>
   </template>
 
+
+  <div class="modal hidden" id="adminLoginModal" role="dialog" aria-modal="true">
+    <div class="modal-card login-card">
+      <div class="modal-icon">🔐</div>
+      <h2>Admin ავტორიზაცია</h2>
+      <p>აპლიკანტების მონაცემებზე წვდომა მხოლოდ ავტორიზებულ ადმინისტრატორს აქვს.</p>
+      <div class="field">
+        <label>ელფოსტა</label>
+        <input id="adminEmail" type="email" autocomplete="username" placeholder="Admin email">
+      </div>
+      <div class="field">
+        <label>პაროლი</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" placeholder="პაროლი">
+      </div>
+      <div id="adminLoginError" class="login-error hidden"></div>
+      <div class="nav-row">
+        <button class="secondary" id="cancelAdminLogin">გაუქმება</button>
+        <button class="primary" id="submitAdminLogin">შესვლა</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /applicants/{applicantId} {
+
+      // Public website may submit a new application only.
+      allow create: if
+        request.resource.data.fullName is string &&
+        request.resource.data.fullName.size() > 0 &&
+        request.resource.data.fullName.size() <= 120 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() > 0 &&
+        request.resource.data.phone.size() <= 40 &&
+        request.resource.data.score is int &&
+        request.resource.data.score >= 0 &&
+        request.resource.data.score <= 100;
+
+      // Only the authorized admin account may read, edit or delete applications.
+      allow read, update, delete: if
+        request.auth != null &&
+        request.auth.token.email == "badri.bagagoshvili@gmail.com";
+    }
+  }
+}

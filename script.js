@@ -9,11 +9,14 @@ const firebaseConfig = {
 };
 
 let db = null;
+let auth = null;
 let firebaseReady = false;
+const ADMIN_EMAIL = "badri.bagagoshvili@gmail.com";
 try {
   if (window.firebase) {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
+    auth = firebase.auth();
     firebaseReady = true;
   }
 } catch (e) {
@@ -109,8 +112,65 @@ const sections = [
 function f(id,type,label,required,options=[]){ return {id,type,label,required,options}; }
 
 document.getElementById("homeBtn").onclick = renderHome;
-document.getElementById("adminBtn").onclick = renderAdmin;
+document.getElementById("adminBtn").onclick = openAdminAccess;
 qsa("[data-go-home]").forEach(el => el.onclick = renderHome);
+
+
+function openAdminAccess(){
+  if(!firebaseReady || !auth){
+    alert("Admin ავტორიზაცია ამ მომენტში მიუწვდომელია.");
+    return;
+  }
+  const user = auth.currentUser;
+  if(user && user.email === ADMIN_EMAIL){
+    renderAdmin();
+    return;
+  }
+  const modal = document.getElementById("adminLoginModal");
+  modal.classList.remove("hidden");
+  const emailEl = document.getElementById("adminEmail");
+  const passEl = document.getElementById("adminPassword");
+  const errorEl = document.getElementById("adminLoginError");
+  emailEl.value = "";
+  passEl.value = "";
+  errorEl.classList.add("hidden");
+  errorEl.textContent = "";
+  setTimeout(()=>emailEl.focus(), 50);
+}
+
+document.getElementById("cancelAdminLogin").onclick = ()=>{
+  document.getElementById("adminLoginModal").classList.add("hidden");
+};
+
+document.getElementById("submitAdminLogin").onclick = async ()=>{
+  const email = document.getElementById("adminEmail").value.trim();
+  const password = document.getElementById("adminPassword").value;
+  const errorEl = document.getElementById("adminLoginError");
+  errorEl.classList.add("hidden");
+
+  if(email !== ADMIN_EMAIL){
+    errorEl.textContent = "ამ ელფოსტას Admin წვდომა არ აქვს.";
+    errorEl.classList.remove("hidden");
+    return;
+  }
+
+  try{
+    await auth.signInWithEmailAndPassword(email, password);
+    document.getElementById("adminLoginModal").classList.add("hidden");
+    renderAdmin();
+  }catch(e){
+    errorEl.textContent = "ელფოსტა ან პაროლი არასწორია.";
+    errorEl.classList.remove("hidden");
+  }
+};
+
+if(window.firebase){
+  setTimeout(()=>{
+    if(auth){
+      auth.onAuthStateChanged(()=>{});
+    }
+  },0);
+}
 
 function renderHome(){
   app.innerHTML = clone("homeTemplate");
@@ -504,14 +564,22 @@ function saveLocal(record){
 function getApplicants(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch{return[];}}
 
 async function renderAdmin(){
+  if(!firebaseReady || !auth || !auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL){
+    openAdminAccess();
+    return;
+  }
   app.innerHTML=clone("adminTemplate");
   qs("#adminHomeBtn",app).onclick=renderHome;
+  qs("#adminLogoutBtn",app).onclick=async ()=>{
+    await auth.signOut();
+    renderHome();
+  };
   let list=getApplicants();
   if(firebaseReady && db){
     try{
       const snap=await db.collection("applicants").orderBy("createdAt","desc").limit(300).get();
       list=snap.docs.map(d=>({id:d.id,...d.data()}));
-    }catch(e){console.warn("Admin online load failed",e);}
+    }catch(e){console.warn("Admin online load failed",e); alert("Admin მონაცემების წაკითხვა ვერ მოხერხდა. გადაამოწმეთ Firebase Authentication და Firestore Rules.");}
   }
   window.__adminList=list;
   renderStats(list);

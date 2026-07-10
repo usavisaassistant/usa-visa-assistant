@@ -1,0 +1,18 @@
+SECURITY SETUP — REQUIRED
+
+1) Firebase Console → Authentication → Sign-in method
+   Enable "Email/Password".
+
+2) Firebase Console → Authentication → Users → Add user
+   Email: badri.bagagoshvili@gmail.com
+   Set a strong, unique password.
+
+3) Firebase Console → Firestore Database → Rules
+   Replace the current rules with the content of firestore.rules
+   and click Publish.
+
+4) Upload index.html, script.js and style.css to GitHub, replacing the current files.
+
+IMPORTANT:
+Do not advertise the site until Firestore Rules are published.
+The login screen alone is not enough; the Rules are what protect the data.
