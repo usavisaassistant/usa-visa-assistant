@@ -159,7 +159,7 @@ document.getElementById("submitAdminLogin").onclick = async ()=>{
     document.getElementById("adminLoginModal").classList.add("hidden");
     renderAdmin();
   }catch(e){
-    errorEl.textContent = "ელფოსტა ან პაროლი არასწორია.";
+  errorEl.textContent = e.code + " — " + e.message;
     errorEl.classList.remove("hidden");
   }
 };
