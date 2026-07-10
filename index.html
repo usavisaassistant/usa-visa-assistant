@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="USA Visa Assistant PRO — B1/B2 ვიზის მზადყოფნის შეფასება, ვირტუალური კონსული და DS-160 ტექსტის შემოწმება." />
+  <title>USA Visa Assistant PRO</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg"></div>
+  <header class="topbar">
+    <button class="brand brand-button" id="brandHome" aria-label="მთავარი გვერდი">
+      <div class="logo">🇺🇸</div>
+      <div>
+        <div class="brand-title">USA Visa Assistant PRO</div>
+        <div class="brand-sub" data-i18n="brandSub">ამერიკის ვიზისთვის მომზადების პლატფორმა</div>
+      </div>
+    </button>
+    <div class="top-actions">
+      <button class="ghost" id="langToggle">ENG</button>
+      <button class="ghost" id="adminBtn">Admin</button>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <template id="homeTemplate">
+    <section class="hero card glass">
+      <div class="pill">B1/B2 • Visa Readiness</div>
+      <h1 data-i18n="heroTitle">მოემზადეთ ამერიკის ტურისტული ვიზისთვის პროფესიონალურად</h1>
+      <p data-i18n="heroText">აირჩიეთ თქვენთვის საჭირო ინსტრუმენტი — მზადყოფნის შეფასება, ვირტუალური გასაუბრება ან DS-160 ტექსტის შემოწმება.</p>
+      <div class="tool-grid">
+        <button class="tool-card" data-tool="assessment"><span>📊</span><b data-i18n="toolAssessment">ვიზის მზადყოფნის შეფასება</b><small data-i18n="toolAssessmentSub">მიიღეთ რისკების, ძლიერი მხარეებისა და რეკომენდაციების ანგარიში.</small></button>
+        <button class="tool-card" data-tool="consul"><span>🎤</span><b data-i18n="toolConsul">ვირტუალური კონსული</b><small data-i18n="toolConsulSub">გაიარეთ საკონსულო გასაუბრების რეალისტური სიმულაცია.</small></button>
+        <button class="tool-card" data-tool="ds160"><span>📝</span><b data-i18n="toolDs160">DS-160 ტექსტის შემოწმება</b><small data-i18n="toolDs160Sub">შეამოწმეთ ინგლისური ტექსტი, ბუნდოვანება და შესაძლო წინააღმდეგობები.</small></button>
+      </div>
+      <p class="disclaimer" data-i18n="homeDisclaimer">პლატფორმა არ იძლევა ვიზის გარანტიას. საბოლოო გადაწყვეტილებას იღებს მხოლოდ აშშ-ის საკონსულოს ოფიცერი.</p>
+    </section>
+  </template>
+
+  <template id="formTemplate">
+    <section class="form-shell">
+      <div class="progress-card card"><div class="step-meta"><span id="stepLabel"></span><span id="percentLabel"></span></div><div class="progress"><div id="progressBar"></div></div></div>
+      <div class="card form-card">
+        <h2 id="sectionTitle"></h2><p id="sectionSubtitle" class="muted"></p><div id="fields"></div>
+        <div class="nav-row"><button class="secondary" id="prevBtn" data-i18n="back">უკან</button><button class="primary" id="nextBtn" data-i18n="next">შემდეგი</button></div>
+      </div>
+    </section>
+  </template>
+
+  <template id="resultTemplate">
+    <section class="result-wrap card">
+      <div class="score-circle"><span id="scoreValue">0</span><small>/100</small></div>
+      <h1 id="scoreTitle"></h1><p id="riskLabel" class="risk-pill"></p>
+      <p class="muted" data-i18n="resultSub">თქვენი პასუხების საფუძველზე შეიქმნა საინფორმაციო ანგარიში.</p>
+      <div class="grid2"><div class="mini-card"><h3 data-i18n="strongTitle">ძლიერი მხარეები</h3><ul id="strongList"></ul></div><div class="mini-card"><h3 data-i18n="weakTitle">საყურადღებო საკითხები</h3><ul id="weakList"></ul></div></div>
+      <div class="mini-card full"><h3 data-i18n="questionsTitle">სავარაუდო საკონსულო კითხვები</h3><ul id="questionList"></ul></div>
+      <div class="notice" data-i18n="resultDisclaimer">შეფასება საინფორმაციო ხასიათისაა და არ წარმოადგენს ვიზის მიღების გარანტიას.</div>
+      <div class="nav-row center"><button class="primary" id="consultBtn" data-i18n="consult">WhatsApp კონსულტაცია</button><button class="secondary" id="downloadBtn" data-i18n="download">რეპორტის ჩამოტვირთვა</button><button class="secondary" id="restartBtn" data-i18n="restart">მთავარ გვერდზე დაბრუნება</button></div>
+    </section>
+  </template>
+
+  <template id="consulTemplate">
+    <section class="assistant-wrap card">
+      <div class="assistant-head"><div><div class="pill">AI-style Interview Practice</div><h1 data-i18n="consulTitle">ვირტუალური კონსული</h1><p class="muted" data-i18n="consulIntro">უპასუხეთ მოკლედ, ზუსტად და მხოლოდ სიმართლე.</p></div><button class="secondary" id="exitToolBtn">Home</button></div>
+      <div id="chatBox" class="chat-box"></div>
+      <div class="chat-input-row"><textarea id="chatAnswer" rows="3" data-i18n-placeholder="answerPlaceholder" placeholder="ჩაწერეთ პასუხი..."></textarea><button class="primary" id="sendAnswerBtn" data-i18n="send">გაგზავნა</button></div>
+    </section>
+  </template>
+
+  <template id="consulResultTemplate">
+    <section class="result-wrap card"><h1 data-i18n="interviewResult">გასაუბრების შეფასება</h1><div class="score-circle"><span id="interviewScore">0</span><small>/100</small></div><div class="grid2"><div class="mini-card"><h3 data-i18n="goodAnswers">კარგი პასუხები</h3><ul id="goodAnswerList"></ul></div><div class="mini-card"><h3 data-i18n="improveAnswers">გასაუმჯობესებელი პასუხები</h3><ul id="improveAnswerList"></ul></div></div><div class="mini-card full"><h3 data-i18n="practiceTips">მომზადების რჩევები</h3><ul id="practiceTipsList"></ul></div><div class="notice" data-i18n="truthNotice">არ დამალოთ ფაქტები და არ მოიგონოთ ინფორმაცია. რეკომენდაციები გამოიყენეთ მხოლოდ თქვენი რეალური გარემოებების უკეთ ასახსნელად.</div><div class="nav-row center"><button class="primary" id="consulWhatsapp">WhatsApp კონსულტაცია</button><button class="secondary" id="consulRestart">თავიდან გავლა</button><button class="secondary" id="consulHome">მთავარი</button></div></section>
+  </template>
+
+  <template id="dsTemplate">
+    <section class="assistant-wrap card"><div class="assistant-head"><div><div class="pill">DS-160 Text Review</div><h1 data-i18n="dsTitle">DS-160 ტექსტის შემოწმება</h1><p class="muted" data-i18n="dsIntro">ჩასვით ინგლისური ტექსტი. სისტემა შეამოწმებს სიცხადეს, სიგრძესა და გავრცელებულ პრობლემებს.</p></div><button class="secondary" id="exitToolBtn">Home</button></div><label class="field-label" data-i18n="textType">ტექსტის ტიპი</label><select id="dsType"><option value="purpose">Purpose of Trip</option><option value="duties">Job Duties</option><option value="refusal">Previous Refusal Explanation</option><option value="other">Other</option></select><label class="field-label" data-i18n="pasteText">ჩასვით ტექსტი ინგლისურად</label><textarea id="dsText" rows="10" placeholder="Example: I plan to visit New York for tourism..."></textarea><button class="primary wide" id="checkDsBtn" data-i18n="checkText">ტექსტის შემოწმება</button><div id="dsResult"></div></section>
+  </template>
+
+  <template id="adminTemplate">
+    <section class="admin-wrap card"><div class="admin-head"><div><h1>Admin Panel</h1><p class="muted" data-i18n="adminSub">შევსებული განაცხადები</p></div><button class="secondary" id="homeBtn">Home</button></div><div class="admin-tools"><input id="searchInput" placeholder="Search by name or phone" /><button class="primary" id="exportBtn">CSV Export</button><button class="danger" id="clearBtn">Clear Local Data</button></div><div id="applicantsList"></div></section>
+  </template>
+
+  <footer class="footer"><p>USA Visa Assistant PRO არ წარმოადგენს აშშ-ის საელჩოს ან სახელმწიფო უწყებას.</p><p>დისტანციური კონსულტაცია: <a href="https://wa.me/995571563035" target="_blank" rel="noopener">+995 571 56 30 35</a></p></footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
