@@ -1,4 +1,3 @@
-// Firebase online database configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDkHMnxngyfeUES5HfR7u8vNI9nimVvj3c",
   authDomain: "usa-visa-assistant.firebaseapp.com",
@@ -8,6 +7,7 @@ const firebaseConfig = {
   appId: "1:10902149878:web:6e863dff5e15f7a3bd2ad7",
   measurementId: "G-40DZNEVXDD"
 };
+
 let db = null;
 let firebaseReady = false;
 try {
@@ -16,231 +16,557 @@ try {
     db = firebase.firestore();
     firebaseReady = true;
   }
-} catch (error) {
-  console.warn('Firebase not ready, local mode only:', error);
-}
-async function saveApplicantOnline(record) {
-  if (!firebaseReady || !db) return null;
-  const clean = {...record, savedOnlineAt: new Date().toISOString()};
-  const ref = await db.collection('applicants').add(clean);
-  return ref.id;
-}
-async function loadApplicantsOnline() {
-  if (!firebaseReady || !db) return null;
-  const snap = await db.collection('applicants').orderBy('createdAt','desc').limit(200).get();
-  return snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+} catch (e) {
+  console.warn("Firebase unavailable, local mode active", e);
 }
 
-const STORAGE_KEY = 'usaVisaAssistantApplicantsV3';
-let lang = localStorage.getItem('uva_lang') || 'ka';
+const STORAGE_KEY = "usaVisaAdvisorV5Applicants";
+const app = document.getElementById("app");
 let step = 0;
 let answers = {};
+let lastResult = null;
+let interviewIndex = 0;
+let interviewAnswers = [];
 
-const t = {
-  ka: {
-    brandSub:'ამერიკის ვიზისთვის მომზადების პლატფორმა', toolAssessment:'ვიზის მზადყოფნის შეფასება', toolAssessmentSub:'მიიღეთ რისკების, ძლიერი მხარეებისა და რეკომენდაციების ანგარიში.', toolConsul:'ვირტუალური კონსული', toolConsulSub:'გაიარეთ საკონსულო გასაუბრების რეალისტური სიმულაცია.', toolDs160:'DS-160 ტექსტის შემოწმება', toolDs160Sub:'შეამოწმეთ ინგლისური ტექსტი, ბუნდოვანება და შესაძლო წინააღმდეგობები.', consulTitle:'ვირტუალური კონსული', consulIntro:'უპასუხეთ მოკლედ, ზუსტად და მხოლოდ სიმართლე.', answerPlaceholder:'ჩაწერეთ პასუხი...', send:'გაგზავნა', interviewResult:'გასაუბრების შეფასება', goodAnswers:'კარგი პასუხები', improveAnswers:'გასაუმჯობესებელი პასუხები', practiceTips:'მომზადების რჩევები', truthNotice:'არ დამალოთ ფაქტები და არ მოიგონოთ ინფორმაცია. რეკომენდაციები გამოიყენეთ მხოლოდ თქვენი რეალური გარემოებების უკეთ ასახსნელად.', dsTitle:'DS-160 ტექსტის შემოწმება', dsIntro:'ჩასვით ინგლისური ტექსტი. სისტემა შეამოწმებს სიცხადეს, სიგრძესა და გავრცელებულ პრობლემებს.', textType:'ტექსტის ტიპი', pasteText:'ჩასვით ტექსტი ინგლისურად', checkText:'ტექსტის შემოწმება', questionsTitle:'სავარაუდო საკონსულო კითხვები', heroTitle:'მოემზადეთ ამერიკის ტურისტული ვიზისთვის პროფესიონალურად', heroText:'აირჩიეთ თქვენთვის საჭირო ინსტრუმენტი — მზადყოფნის შეფასება, ვირტუალური გასაუბრება ან DS-160 ტექსტის შემოწმება.', homeDisclaimer:'ეს არ არის ვიზის გარანტია. საბოლოო გადაწყვეტილებას იღებს მხოლოდ საკონსულოს ოფიცერი.', back:'უკან', next:'შემდეგი', finish:'შედეგის ნახვა', resultSub:'თქვენი პასუხების მიხედვით შეიქმნა საინფორმაციო მზადყოფნის ინდექსი.', strongTitle:'ძლიერი მხარეები', weakTitle:'გასაუმჯობესებელი', resultDisclaimer:'ინდექსი არ წარმოადგენს ვიზის მიღების გარანტიას. გადაწყვეტილებას იღებს მხოლოდ აშშ-ის საკონსულოს ოფიცერი.', consult:'კონსულტაცია მინდა', download:'რეპორტის ჩამოტვირთვა', restart:'თავიდან დაწყება', adminSub:'შევსებული განაცხადები', step:'ეტაპი', of:'დან', low:'საჭიროა მომზადება', mid:'საშუალო მზადყოფნა', high:'კარგი მზადყოფნა', excellent:'ძალიან კარგი მზადყოფნა', choose:'აირჩიეთ', required:'გთხოვთ შეავსოთ აუცილებელი ველები.', saving:'ინახება...', saved:'შენახულია ონლაინ ბაზაში', localSaved:'შენახულია დროებით, მაგრამ Firebase კავშირი ვერ დამყარდა'
-  },
-  en: {
-    brandSub:'U.S. visa preparation platform', toolAssessment:'Visa readiness assessment', toolAssessmentSub:'Receive a report on risks, strengths and recommendations.', toolConsul:'Virtual Consul', toolConsulSub:'Practice a realistic consular interview simulation.', toolDs160:'DS-160 text checker', toolDs160Sub:'Review English text for clarity and common issues.', consulTitle:'Virtual Consul', consulIntro:'Answer briefly, clearly and truthfully.', answerPlaceholder:'Type your answer...', send:'Send', interviewResult:'Interview assessment', goodAnswers:'Strong answers', improveAnswers:'Answers to improve', practiceTips:'Preparation tips', truthNotice:'Do not hide facts or invent information. Use suggestions only to explain your real circumstances more clearly.', dsTitle:'DS-160 text checker', dsIntro:'Paste your English text. The checker reviews clarity, length and common issues.', textType:'Text type', pasteText:'Paste text in English', checkText:'Check text', questionsTitle:'Likely consular questions', heroTitle:'Prepare professionally for a U.S. tourist visa', heroText:'Choose the tool you need — readiness assessment, virtual interview or DS-160 text review.', homeDisclaimer:'This is not a visa guarantee. The final decision is made only by the consular officer.', back:'Back', next:'Next', finish:'See Result', resultSub:'Based on your answers, an informational readiness index has been created.', strongTitle:'Strong points', weakTitle:'Needs improvement', resultDisclaimer:'The index is not a guarantee of visa approval. The decision is made only by the U.S. consular officer.', consult:'I want consultation', download:'Download report', restart:'Start again', adminSub:'Submitted applicants', step:'Step', of:'of', low:'Needs preparation', mid:'Average readiness', high:'Good readiness', excellent:'Very good readiness', choose:'Select', required:'Please complete the required fields.', saving:'Saving...', saved:'Saved to online database', localSaved:'Saved locally, but Firebase connection failed'
-  }
-};
+const qs = (s, r=document) => r.querySelector(s);
+const qsa = (s, r=document) => [...r.querySelectorAll(s)];
+const clone = id => document.getElementById(id).innerHTML;
 
 const sections = [
-  {id:'personal', title:{ka:'პირადი ინფორმაცია',en:'Personal information'}, subtitle:{ka:'საკონტაქტო და ძირითადი მონაცემები',en:'Contact and basic details'}, fields:[
-    f('fullName','text',{ka:'სახელი და გვარი',en:'Full name'}, true), f('phone','tel',{ka:'ტელეფონის ნომერი',en:'Phone number'}, true), f('email','email',{ka:'ელფოსტა',en:'Email'}, false), f('age','select',{ka:'ასაკი',en:'Age'}, true, ['18-24','25-34','35-44','45-54','55+'])]},
-  {id:'location', title:{ka:'ქვეყანა და საკონსულო',en:'Country and consulate'}, subtitle:{ka:'სად იმყოფებით და სად გსურთ განაცხადი',en:'Where you are and where you want to apply'}, fields:[
-    f('citizenship','text',{ka:'მოქალაქეობა',en:'Citizenship'}, true), f('residence','text',{ka:'რომელ ქვეყანაში ცხოვრობთ ახლა?',en:'Which country do you currently live in?'}, true), f('applyCity','text',{ka:'რომელ ქალაქში/ქვეყანაში გსურთ ვიზაზე შესვლა?',en:'In which city/country would you like to apply?'}, true), f('legalResidence','radio',{ka:'გაქვთ ამ ქვეყანაში ლეგალური რეზიდენტობა?',en:'Do you have legal residence there?'}, true, [['yes','დიახ','Yes'],['no','არა','No'],['not_sure','არ ვიცი','Not sure']])]},
-  {id:'visa', title:{ka:'წინა ვიზები და უარები',en:'Previous visas and refusals'}, subtitle:{ka:'სავიზო ისტორია',en:'Visa history'}, fields:[
-    f('hadUsVisa','radio',{ka:'გქონიათ ადრე ამერიკის ვიზა?',en:'Have you ever had a U.S. visa?'}, true, [['yes','დიახ','Yes'],['no','არა','No']]), f('usRefusal','radio',{ka:'გქონიათ ამერიკის ვიზაზე უარი?',en:'Have you ever been refused a U.S. visa?'}, true, [['yes','დიახ','Yes'],['no','არა','No']]), f('otherRefusal','radio',{ka:'სხვა ქვეყნის ვიზაზე უარი გქონიათ?',en:'Have you been refused by another country?'}, true, [['yes','დიახ','Yes'],['no','არა','No']]), f('overstay','radio',{ka:'ოდესმე გადააცილეთ დაშვებულ ყოფნის ვადას?',en:'Have you ever overstayed a permitted stay?'}, true, [['yes','დიახ','Yes'],['no','არა','No']])]},
-  {id:'travel', title:{ka:'მოგზაურობის ისტორია',en:'Travel history'}, subtitle:{ka:'გასვლები და გამოცდილება',en:'Trips and travel experience'}, fields:[
-    f('travelHistory','radio',{ka:'გაქვთ მოგზაურობის ისტორია?',en:'Do you have travel history?'}, true, [['strong','დიახ, რამდენიმე ქვეყანა','Yes, several countries'],['some','ნაწილობრივ','Partially'],['none','არა','No']]), f('visitedCountries','textarea',{ka:'რომელი ქვეყნები გაქვთ ნანახი?',en:'Which countries have you visited?'}, false), f('recentTravel','radio',{ka:'ბოლო 2 წელში იმოგზაურეთ?',en:'Have you traveled in the last 2 years?'}, true, [['yes','დიახ','Yes'],['no','არა','No']])]},
-  {id:'employment', title:{ka:'სამსახური და შემოსავალი',en:'Employment and income'}, subtitle:{ka:'ეკონომიკური კავშირები',en:'Economic ties'}, fields:[
-    f('employment','radio',{ka:'თქვენი სტატუსი',en:'Your status'}, true, [['employed','დასაქმებული','Employed'],['self','თვითდასაქმებული','Self-employed'],['student','სტუდენტი','Student'],['student_employed','სტუდენტი და დასაქმებული','Student and employed'],['unemployed','დაუსაქმებელი','Unemployed']]), f('monthlyIncome','select',{ka:'დაახლოებით თვიური შემოსავალი',en:'Approximate monthly income'}, true, [['low','0-1000 GEL','$0-400'],['mid','1000-3000 GEL','$400-1100'],['good','3000-6000 GEL','$1100-2200'],['high','6000+ GEL','$2200+']]), f('incomeProof','radio',{ka:'გაქვთ შემოსავლის დამადასტურებელი დოკუმენტი?',en:'Do you have proof of income?'}, true, [['yes','დიახ','Yes'],['partial','ნაწილობრივ','Partially'],['no','არა','No']])]},
-  {id:'ties', title:{ka:'კავშირები სამშობლოსთან',en:'Home country ties'}, subtitle:{ka:'ოჯახი, ქონება და დაბრუნების მიზეზები',en:'Family, property and reasons to return'}, fields:[
-    f('marital','radio',{ka:'ოჯახური მდგომარეობა',en:'Marital status'}, true, [['single','დასაოჯახებელი','Single'],['married','დაოჯახებული','Married'],['divorced','განქორწინებული','Divorced']]), f('children','radio',{ka:'გყავთ შვილები?',en:'Do you have children?'}, true, [['yes','დიახ','Yes'],['no','არა','No']]), f('property','radio',{ka:'გაქვთ უძრავი ქონება თქვენს სახელზე?',en:'Do you own property?'}, true, [['yes','დიახ','Yes'],['no','არა','No']]), f('business','radio',{ka:'გაქვთ ბიზნესი/კომპანია?',en:'Do you own a business/company?'}, true, [['yes','დიახ','Yes'],['no','არა','No']])]},
-  {id:'trip', title:{ka:'მოგზაურობის მიზანი',en:'Purpose of travel'}, subtitle:{ka:'რატომ მიდიხართ ამერიკაში',en:'Why you want to visit the U.S.'}, fields:[
-    f('purpose','radio',{ka:'მიზანი',en:'Purpose'}, true, [['tourism','ტურიზმი','Tourism'],['family','ოჯახის/ნათესავის მონახულება','Visiting family/relatives'],['business','ბიზნესი','Business'],['event','ღონისძიებაზე დასწრება','Attending an event'],['other','სხვა','Other']]), f('duration','select',{ka:'რამდენი დღით გეგმავთ ყოფნას?',en:'How long do you plan to stay?'}, true, [['short','1-14 დღე','1-14 days'],['mid','15-30 დღე','15-30 days'],['long','1 თვეზე მეტი','More than 1 month']]), f('sponsor','radio',{ka:'ვინ აფინანსებს მოგზაურობას?',en:'Who will pay for the trip?'}, true, [['self','მე თვითონ','Myself'],['family','ოჯახი/ნათესავი','Family/relative'],['company','კომპანია','Company'],['other','სხვა','Other']]), f('usFamily','radio',{ka:'გყავთ ახლო ნათესავი აშშ-ში?',en:'Do you have close relatives in the U.S.?'}, true, [['yes','დიახ','Yes'],['no','არა','No']])]},
-  {id:'final', title:{ka:'კონსულტაცია',en:'Consultation'}, subtitle:{ka:'დასკვნითი ინფორმაცია',en:'Final details'}, fields:[
-    f('helpNeeded','radio',{ka:'გსურთ ჩვენი დახმარება?',en:'Would you like our assistance?'}, true, [['consult','დიახ, კონსულტაცია მინდა','Yes, I want consultation'],['info','მხოლოდ ინფორმაცია მაინტერესებს','I only need information']]), f('notes','textarea',{ka:'დამატებითი კომენტარი',en:'Additional comment'}, false)]}
+  {
+    eyebrow:"ეტაპი 1", title:"პირადი და საკონტაქტო ინფორმაცია", subtitle:"ძირითადი მონაცემები",
+    fields:[
+      f("fullName","text","სახელი და გვარი",true),
+      f("phone","tel","ტელეფონის ნომერი",true),
+      f("email","email","ელფოსტა",false),
+      f("age","select","ასაკი",true,[["18_24","18-24"],["25_30","25-30"],["31_45","31-45"],["46_60","46-60"],["60_plus","60+"]]),
+      f("marital","radio","ოჯახური მდგომარეობა",true,[["single","დასაოჯახებელი"],["married","დაოჯახებული"],["divorced","განქორწინებული"],["widowed","ქვრივი"]]),
+      f("children","radio","გყავთ შვილები?",true,[["yes","დიახ"],["no","არა"]])
+    ]
+  },
+  {
+    eyebrow:"ეტაპი 2", title:"დასაქმება და პროფესიული სტაბილურობა", subtitle:"ხანგრძლივობა რეალისტურ შეფასებაში დიდ გავლენას ახდენს",
+    fields:[
+      f("employment","radio","თქვენი სტატუსი",true,[["employed","დასაქმებული"],["self","თვითდასაქმებული / ბიზნესი"],["student_employed","სტუდენტი და დასაქმებული"],["student","სტუდენტი"],["unemployed","დაუსაქმებელი"],["retired","პენსიონერი"]]),
+      f("jobYears","select","რამდენი წელია მუშაობთ მიმდინარე საქმიანობაში?",true,[["under_6m","6 თვეზე ნაკლები"],["6_12m","6-12 თვე"],["1_3y","1-3 წელი"],["3_5y","3-5 წელი"],["5_10y","5-10 წელი"],["10_plus","10 წელზე მეტი"]]),
+      f("jobTitle","text","თანამდებობა / საქმიანობა",false),
+      f("monthlyIncome","select","თვიური შემოსავალი",true,[["under_1000","1000 ლარზე ნაკლები"],["1000_3000","1000-3000 ლარი"],["3000_6000","3000-6000 ლარი"],["6000_10000","6000-10000 ლარი"],["10000_plus","10000+ ლარი"]]),
+      f("incomeProof","radio","შეგიძლიათ შემოსავლის დადასტურება?",true,[["yes","დიახ"],["partial","ნაწილობრივ"],["no","არა"]])
+    ]
+  },
+  {
+    eyebrow:"ეტაპი 3", title:"ფინანსები და აქტივები", subtitle:"მოგზაურობის დაფინანსების რეალურობა",
+    fields:[
+      f("bankFunds","select","დაახლოებით რა თანხა გაქვთ ხელმისაწვდომი მოგზაურობისთვის?",true,[["under_1000","1000 ლარზე ნაკლები"],["1000_5000","1000-5000 ლარი"],["5000_10000","5000-10000 ლარი"],["10000_30000","10000-30000 ლარი"],["30000_plus","30000+ ლარი"]]),
+      f("property","select","უძრავი ქონება",true,[["none","არ მაქვს"],["one","ერთი ქონება"],["multiple","რამდენიმე ქონება"]]),
+      f("business","radio","გაქვთ საკუთარი ბიზნესი ან კომპანიის წილი?",true,[["yes","დიახ"],["no","არა"]]),
+      f("sponsor","radio","ვინ აფინანსებს მოგზაურობას?",true,[["self","მე თვითონ"],["family","ოჯახის წევრი"],["company","კომპანია"],["other","სხვა"]])
+    ]
+  },
+  {
+    eyebrow:"ეტაპი 4", title:"მოგზაურობის ისტორია", subtitle:"რაოდენობა და ბოლო წლების აქტივობა",
+    fields:[
+      f("countryCount","select","რამდენ ქვეყანაში ხართ ნამყოფი?",true,[["0","არც ერთში"],["1_2","1-2 ქვეყანაში"],["3_5","3-5 ქვეყანაში"],["6_10","6-10 ქვეყანაში"],["10_plus","10-ზე მეტ ქვეყანაში"]]),
+      f("recentTravel","radio","ბოლო 2 წელში იმოგზაურეთ?",true,[["yes","დიახ"],["no","არა"]]),
+      f("strongVisas","multi","რომელი ვიზები ან ვიზიტები გქონიათ?",false,[["schengen","შენგენი"],["uk","დიდი ბრიტანეთი"],["canada","კანადა"],["australia","ავსტრალია"],["japan","იაპონია"],["usa","აშშ"]]),
+      f("overstay","radio","ოდესმე გადააცილეთ დაშვებულ ყოფნის ვადას?",true,[["yes","დიახ"],["no","არა"]])
+    ]
+  },
+  {
+    eyebrow:"ეტაპი 5", title:"ამერიკის სავიზო ისტორია", subtitle:"წინა ვიზები და უარები",
+    fields:[
+      f("hadUsVisa","radio","გქონიათ ადრე აშშ-ის ვიზა?",true,[["yes","დიახ"],["no","არა"]]),
+      f("refusalCount","select","რამდენჯერ გქონდათ აშშ-ის ვიზაზე უარი?",true,[["0","არც ერთხელ"],["1","ერთხელ"],["2","ორჯერ"],["3_plus","სამჯერ ან მეტჯერ"]]),
+      f("lastRefusalChange","textarea","თუ უარი გქონდათ, რა შეიცვალა მას შემდეგ?",false)
+    ]
+  },
+  {
+    eyebrow:"ეტაპი 6", title:"ოჯახის წევრი ამერიკაში", subtitle:"უპასუხეთ მხოლოდ სიმართლე",
+    fields:[
+      f("usFamily","radio","გყავთ ოჯახის წევრი აშშ-ში?",true,[["no","არა"],["yes_legal","დიახ, ლეგალურად იმყოფება"],["yes_illegal","დიახ, არალეგალურად იმყოფება"]]),
+      f("familyRelation","select","ნათესაობა",false,[["none","არ ეხება"],["parent","მშობელი"],["sibling","და/ძმა"],["child","შვილი"],["spouse","მეუღლე"],["other","სხვა ნათესავი"]])
+    ]
+  },
+  {
+    eyebrow:"ეტაპი 7", title:"მოგზაურობის გეგმა", subtitle:"კონკრეტულობა და რეალურობა",
+    fields:[
+      f("purpose","select","მოგზაურობის მიზანი",true,[["tourism","ტურიზმი"],["family","ოჯახის/ნათესავის მონახულება"],["business","ბიზნესი"],["event","ღონისძიება / კონფერენცია"],["medical","სამედიცინო"],["other","სხვა"]]),
+      f("duration","select","რამდენი დღით მიდიხართ?",true,[["1_7","1-7 დღე"],["8_14","8-14 დღე"],["15_30","15-30 დღე"],["31_60","31-60 დღე"],["60_plus","60 დღეზე მეტი"]]),
+      f("cities","text","რომელი ქალაქების მონახულებას გეგმავთ?",true),
+      f("stayPlace","select","სად დარჩებით?",true,[["hotel","სასტუმრო"],["airbnb","Airbnb / ნაქირავები ბინა"],["relative","ნათესავთან"],["friend","მეგობართან"],["other","სხვა"]]),
+      f("returnReason","textarea","რატომ დაბრუნდებით თქვენს ქვეყანაში?",true)
+    ]
+  },
+  {
+    eyebrow:"ეტაპი 8", title:"თანხმობა და დასრულება", subtitle:"მონაცემების დამუშავება",
+    fields:[
+      f("helpNeeded","radio","გსურთ კონსულტაცია?",true,[["yes","დიახ"],["no","არა"]]),
+      f("consent","checkbox","ვეთანხმები ჩემი მონაცემების დამუშავებას შეფასებისა და საკონსულტაციო მომსახურების მიზნით.",true)
+    ]
+  }
 ];
-function f(id,type,label,required,options=[]){return {id,type,label,required,options};}
 
-const app = document.getElementById('app');
-document.getElementById('langToggle').onclick=()=>{lang=lang==='ka'?'en':'ka';localStorage.setItem('uva_lang',lang); render();};
-document.getElementById('adminBtn').onclick=renderAdmin;
-document.getElementById('brandHome').onclick=renderHome;
-function translateRoot(){document.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n; if(t[lang][key]) el.textContent=t[lang][key];});document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{const key=el.dataset.i18nPlaceholder;if(t[lang][key]) el.placeholder=t[lang][key];}); document.getElementById('langToggle').textContent=lang==='ka'?'ENG':'ქარ';}
-function render(){renderHome();}
-function renderHome(){app.innerHTML=document.getElementById('homeTemplate').innerHTML; translateRoot(); app.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{const tool=b.dataset.tool;if(tool==='assessment'){step=0;answers={};renderForm();}else if(tool==='consul'){renderConsul();}else if(tool==='ds160'){renderDsChecker();}});}
-function renderForm(){app.innerHTML=document.getElementById('formTemplate').innerHTML; translateRoot(); const s=sections[step]; document.getElementById('stepLabel').textContent=`${t[lang].step} ${step+1} ${t[lang].of} ${sections.length}`; const pct=Math.round(((step+1)/sections.length)*100); document.getElementById('percentLabel').textContent=pct+'%'; document.getElementById('progressBar').style.width=pct+'%'; document.getElementById('sectionTitle').textContent=s.title[lang]; document.getElementById('sectionSubtitle').textContent=s.subtitle[lang]; const fields=document.getElementById('fields'); fields.innerHTML=''; s.fields.forEach(field=>fields.appendChild(renderField(field))); document.getElementById('prevBtn').style.visibility=step===0?'hidden':'visible'; document.getElementById('prevBtn').onclick=()=>{step--;renderForm();}; const next=document.getElementById('nextBtn'); next.textContent=step===sections.length-1?t[lang].finish:t[lang].next; next.onclick=()=>{if(!collectAndValidate()) return; if(step<sections.length-1){step++;renderForm();}else{saveAndRenderResult();}};}
-function captureVisibleFields(){
-  const s=sections[step];
-  if(!s) return;
-  s.fields.forEach(field=>{
-    if(field.type!=='radio'){
-      const el=document.getElementById(field.id);
-      if(el) answers[field.id]=el.value.trim();
-    }
-  });
+function f(id,type,label,required,options=[]){ return {id,type,label,required,options}; }
+
+document.getElementById("homeBtn").onclick = renderHome;
+document.getElementById("adminBtn").onclick = renderAdmin;
+qsa("[data-go-home]").forEach(el => el.onclick = renderHome);
+
+function renderHome(){
+  app.innerHTML = clone("homeTemplate");
+  qsa("[data-action='assessment']",app).forEach(b=>b.onclick=()=>{step=0;answers={};renderAssessment();});
+  qsa("[data-action='interview']",app).forEach(b=>b.onclick=startInterview);
+  qsa("[data-action='ds160']",app).forEach(b=>b.onclick=renderDs160);
+  renderLeaderboards();
 }
+
+function renderLeaderboards(){
+  const list = getApplicants();
+  const today = new Date().toDateString();
+  const todays = list.filter(x => new Date(x.createdAt || 0).toDateString() === today);
+  const source = todays.length ? todays : list;
+  const top = [...source].sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,5);
+  const low = [...source].sort((a,b)=>(a.score||0)-(b.score||0)).slice(0,5);
+  const row = r => `<div class="leader-row"><span>${maskName(r.fullName||"აპლიკანტი")}</span><span class="leader-score">${r.score||0}/100</span></div>`;
+  qs("#topList",app).innerHTML = top.length ? top.map(row).join("") : `<p class="muted">ჯერ მონაცემები არ არის.</p>`;
+  qs("#lowList",app).innerHTML = low.length ? low.map(row).join("") : `<p class="muted">ჯერ მონაცემები არ არის.</p>`;
+}
+
+function maskName(name){
+  const parts = name.trim().split(/\s+/);
+  return parts.map((p,i)=> i===0 ? p : `${p[0]||""}.`).join(" ");
+}
+
+function renderAssessment(){
+  app.innerHTML = clone("assessmentTemplate");
+  const s = sections[step];
+  qs("#stepLabel",app).textContent = `ეტაპი ${step+1} / ${sections.length}`;
+  const pct = Math.round((step+1)/sections.length*100);
+  qs("#percentLabel",app).textContent = pct+"%";
+  qs("#progressBar",app).style.width = pct+"%";
+  qs("#sectionEyebrow",app).textContent = s.eyebrow;
+  qs("#sectionTitle",app).textContent = s.title;
+  qs("#sectionSubtitle",app).textContent = s.subtitle;
+
+  const box = qs("#fields",app);
+  s.fields.forEach(field=>box.appendChild(renderField(field)));
+
+  qs("#prevBtn",app).style.visibility = step===0 ? "hidden" : "visible";
+  qs("#prevBtn",app).onclick = ()=>{captureVisible();step--;renderAssessment();};
+  qs("#nextBtn",app).textContent = step===sections.length-1 ? "შედეგის ნახვა" : "შემდეგი";
+  qs("#nextBtn",app).onclick = ()=>{
+    if(!collectAndValidate()) return;
+    if(step < sections.length-1){ step++; renderAssessment(); }
+    else finishAssessment();
+  };
+}
+
 function renderField(field){
-  const wrap=document.createElement('div');
-  wrap.className='field reveal';
-  const label=document.createElement('label');
-  label.textContent=field.label[lang]+(field.required?' *':'');
+  const wrap = document.createElement("div");
+  wrap.className = "field";
+  const label = document.createElement("label");
+  label.textContent = field.label + (field.required ? " *" : "");
   wrap.appendChild(label);
-  if(['text','tel','email'].includes(field.type)){
-    const input=document.createElement('input'); input.type=field.type; input.id=field.id; input.value=answers[field.id]||'';
-    input.addEventListener('input',()=>answers[field.id]=input.value.trim());
-    wrap.appendChild(input);
-  } else if(field.type==='textarea'){
-    const ta=document.createElement('textarea'); ta.id=field.id; ta.rows=4; ta.value=answers[field.id]||'';
-    ta.addEventListener('input',()=>answers[field.id]=ta.value.trim());
-    wrap.appendChild(ta);
-  } else if(field.type==='select'){
-    const sel=document.createElement('select'); sel.id=field.id; sel.innerHTML=`<option value="">${t[lang].choose}</option>`;
-    field.options.forEach(o=>{let val,ka,en; if(Array.isArray(o)){[val,ka,en]=o;}else{val=ka=en=o;} const opt=document.createElement('option'); opt.value=val; opt.textContent=lang==='ka'?ka:en; sel.appendChild(opt);});
-    sel.value=answers[field.id]||'';
-    sel.addEventListener('change',()=>answers[field.id]=sel.value);
-    wrap.appendChild(sel);
-  } else if(field.type==='radio'){
-    const box=document.createElement('div'); box.className='options';
-    field.options.forEach(([val,ka,en])=>{
-      const opt=document.createElement('button');
-      opt.type='button';
-      opt.className='option'+(answers[field.id]===val?' selected':'');
-      opt.textContent=lang==='ka'?ka:en;
-      opt.onclick=()=>{
-        captureVisibleFields();
-        answers[field.id]=val;
-        box.querySelectorAll('.option').forEach(x=>x.classList.remove('selected','pop'));
-        opt.classList.add('selected','pop');
-      };
-      box.appendChild(opt);
-    });
-    wrap.appendChild(box);
+
+  if(["text","tel","email"].includes(field.type)){
+    const input=document.createElement("input"); input.type=field.type; input.id=field.id; input.value=answers[field.id]||"";
+    input.oninput=()=>answers[field.id]=input.value.trim(); wrap.appendChild(input);
+  } else if(field.type==="textarea"){
+    const ta=document.createElement("textarea"); ta.id=field.id; ta.rows=4; ta.value=answers[field.id]||"";
+    ta.oninput=()=>answers[field.id]=ta.value.trim(); wrap.appendChild(ta);
+  } else if(field.type==="select"){
+    const sel=document.createElement("select"); sel.id=field.id;
+    sel.innerHTML=`<option value="">აირჩიეთ</option>`;
+    field.options.forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;sel.appendChild(o);});
+    sel.value=answers[field.id]||""; sel.onchange=()=>answers[field.id]=sel.value; wrap.appendChild(sel);
+  } else if(field.type==="radio"){
+    const box=document.createElement("div");box.className="options";
+    field.options.forEach(([v,l])=>{
+      const b=document.createElement("button");b.type="button";b.className="option"+(answers[field.id]===v?" selected":"");b.textContent=l;
+      b.onclick=()=>{answers[field.id]=v;qsa(".option",box).forEach(x=>x.classList.remove("selected"));b.classList.add("selected");};
+      box.appendChild(b);
+    });wrap.appendChild(box);
+  } else if(field.type==="multi"){
+    const box=document.createElement("div");box.className="options";
+    const current = new Set(answers[field.id]||[]);
+    field.options.forEach(([v,l])=>{
+      const b=document.createElement("button");b.type="button";b.className="option"+(current.has(v)?" selected":"");b.textContent=l;
+      b.onclick=()=>{current.has(v)?current.delete(v):current.add(v);answers[field.id]=[...current];b.classList.toggle("selected");};
+      box.appendChild(b);
+    });wrap.appendChild(box);
+  } else if(field.type==="checkbox"){
+    const row=document.createElement("label");row.style.display="flex";row.style.gap="10px";row.style.alignItems="flex-start";
+    const c=document.createElement("input");c.type="checkbox";c.id=field.id;c.checked=!!answers[field.id];c.style.width="22px";c.style.marginTop="2px";
+    c.onchange=()=>answers[field.id]=c.checked; row.appendChild(c); const span=document.createElement("span");span.textContent=field.label;row.appendChild(span);
+    wrap.innerHTML="";wrap.appendChild(row);
   }
   return wrap;
 }
-function collectAndValidate(){captureVisibleFields(); const s=sections[step]; for(const field of s.fields){if(field.required && !answers[field.id]){alert(t[lang].required); return false;}} return true;}
-function calculateScore(a){let score=50; const strong=[], weak=[]; function add(points, good, bad, condition){ if(condition){score+=points; if(good) strong.push(good);} else {score-=Math.abs(points); if(bad) weak.push(bad);} }
- add(10, lang==='ka'?'მოგზაურობის ისტორია გაქვთ':'You have travel history', lang==='ka'?'მოგზაურობის ისტორია სუსტია':'Travel history is weak', a.travelHistory==='strong'||a.travelHistory==='some');
- add(8, lang==='ka'?'შემოსავლის დოკუმენტი გაქვთ':'You have proof of income', lang==='ka'?'შემოსავლის დოკუმენტი გასაძლიერებელია':'Proof of income needs improvement', a.incomeProof==='yes'||a.incomeProof==='partial');
- add(8, lang==='ka'?'სტაბილური სამუშაო/სტატუსი გაქვთ':'You have a stable status', lang==='ka'?'სამუშაო/სტატუსი დასაზუსტებელია':'Employment/status needs clarification', ['employed','self','student_employed'].includes(a.employment));
- add(7, lang==='ka'?'ქონება/ბიზნესი აძლიერებს კავშირებს':'Property/business strengthens ties', lang==='ka'?'სამშობლოსთან კავშირები გასაძლიერებელია':'Home country ties need strengthening', a.property==='yes'||a.business==='yes'||a.children==='yes'||a.marital==='married');
- if(a.usRefusal==='yes'){score-=10; weak.push(lang==='ka'?'წინა უარის ახსნა და სწორი სტრატეგია საჭიროა':'Previous refusal needs explanation and strategy');}
- if(a.overstay==='yes'){score-=18; weak.push(lang==='ka'?'ვადის გადაცილება სერიოზული რისკია და უნდა შეფასდეს':'Overstay is a serious risk and needs review');}
- if(a.duration==='long'){score-=6; weak.push(lang==='ka'?'ძალიან გრძელი ვიზიტი შეიძლება დამატებით კითხვებს იწვევდეს':'A very long stay may raise additional questions');}
- if(a.hadUsVisa==='yes'){score+=5; strong.push(lang==='ka'?'წინა ამერიკული ვიზა დადებითი ფაქტორია':'Previous U.S. visa is a positive factor');}
- score=Math.max(5,Math.min(98,score)); if(strong.length===0) strong.push(lang==='ka'?'კითხვარი სრულად შეივსო':'Assessment completed'); if(weak.length===0) weak.push(lang==='ka'?'ინტერვიუსთვის მკაფიო პასუხების მომზადება':'Prepare clear interview answers'); return {score,strong,weak};}
-async function saveAndRenderResult(){
-  const res=calculateScore(answers);
-  const record={...answers, score:res.score, createdAt:new Date().toISOString(), status:'New', language:lang};
-  const list=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
-  list.unshift(record);
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(list));
-  answers._lastResult=res;
-  try {
-    const id = await saveApplicantOnline(record);
-    if (id) record.firebaseId = id;
-  } catch (e) {
-    console.warn('Could not save online:', e);
+
+function captureVisible(){
+  const s=sections[step]; if(!s) return;
+  s.fields.forEach(field=>{
+    const el=document.getElementById(field.id);
+    if(!el) return;
+    if(field.type==="checkbox") answers[field.id]=el.checked;
+    else if(!["radio","multi"].includes(field.type)) answers[field.id]=el.value.trim();
+  });
+}
+
+function collectAndValidate(){
+  captureVisible();
+  for(const field of sections[step].fields){
+    const value=answers[field.id];
+    const missing = field.type==="checkbox" ? value!==true : (field.required && (value===undefined || value==="" || value===null));
+    if(missing){alert("გთხოვთ შეავსოთ აუცილებელი ველი: "+field.label);return false;}
   }
-  renderResult(record,res);
+  return true;
 }
-function renderResult(record,res){
-  app.innerHTML=document.getElementById('resultTemplate').innerHTML; translateRoot();
-  document.querySelector('.score-circle').style.setProperty('--score',res.score+'%');
-  document.getElementById('scoreValue').textContent=res.score;
-  const title=res.score>=85?t[lang].excellent:res.score>=70?t[lang].high:res.score>=50?t[lang].mid:t[lang].low;
-  document.getElementById('scoreTitle').textContent=title;
-  const risk=res.score>=75?(lang==='ka'?'რისკის დონე: დაბალი':'Risk level: Low'):res.score>=50?(lang==='ka'?'რისკის დონე: საშუალო':'Risk level: Medium'):(lang==='ka'?'რისკის დონე: მაღალი':'Risk level: High');
-  document.getElementById('riskLabel').textContent=risk;
-  document.getElementById('strongList').innerHTML=res.strong.map(x=>`<li>✔️ ${escapeHtml(x)}</li>`).join('');
-  document.getElementById('weakList').innerHTML=res.weak.map(x=>`<li>⚠️ ${escapeHtml(x)}</li>`).join('');
-  const qs=buildLikelyQuestions(record);
-  document.getElementById('questionList').innerHTML=qs.map(x=>`<li>❓ ${escapeHtml(x)}</li>`).join('');
-  document.getElementById('consultBtn').onclick=()=>openWhatsApp('გამარჯობა, გავიარე USA Visa Assistant PRO-ს შეფასება და მსურს კონსულტაცია. ჩემი შეფასებაა '+res.score+'/100.');
-  document.getElementById('restartBtn').onclick=renderHome;
-  document.getElementById('downloadBtn').onclick=()=>downloadReport(record,{...res,questions:qs});
+
+function scoreAssessment(a){
+  let score=52;
+  const impacts=[], strong=[], risks=[];
+  const cat={employment:50,travel:50,finance:50,ties:50,history:50};
+
+  const add=(points,label,category,positiveText,negativeText)=>{
+    score += points;
+    cat[category] = clamp(cat[category] + points*2, 0, 100);
+    impacts.push({label,points});
+    if(points>0 && positiveText) strong.push(positiveText);
+    if(points<0 && negativeText) risks.push(negativeText);
+  };
+
+  const jobMap={under_6m:-9,"6_12m":-5,"1_3y":3,"3_5y":7,"5_10y":11,"10_plus":15};
+  add(jobMap[a.jobYears]||0,"მიმდინარე საქმიანობის ხანგრძლივობა","employment",
+      a.jobYears==="10_plus"?"10 წელზე მეტი სტაბილური საქმიანობა":"დასაქმების სტაბილურობა",
+      "მიმდინარე საქმიანობის მოკლე ისტორია");
+
+  const employmentMap={employed:7,self:8,student_employed:5,student:-2,unemployed:-16,retired:1};
+  add(employmentMap[a.employment]||0,"საქმიანობის სტატუსი","employment",
+      ["employed","self","student_employed"].includes(a.employment)?"აქტიური პროფესიული ან ბიზნეს საქმიანობა":"სტაბილური სტატუსი",
+      a.employment==="unemployed"?"დასაქმების არქონა ზრდის დამატებითი კითხვების ალბათობას":"პროფესიული სტატუსი დამატებით ახსნას მოითხოვს");
+
+  const incMap={under_1000:-9,"1000_3000":-2,"3000_6000":6,"6000_10000":10,"10000_plus":14};
+  add(incMap[a.monthlyIncome]||0,"თვიური შემოსავალი","finance","შემოსავალი შეესაბამება მოგზაურობის დაფინანსებას","დაბალი შემოსავალი მოგზაურობის ბიუჯეტთან შედარებით");
+
+  const bankMap={under_1000:-10,"1000_5000":-4,"5000_10000":4,"10000_30000":8,"30000_plus":11};
+  add(bankMap[a.bankFunds]||0,"ხელმისაწვდომი თანხა","finance","მოგზაურობისთვის ხელმისაწვდომი ფინანსური რესურსი","ხელმისაწვდომი თანხა შესაძლოა არასაკმარისად გამოიყურებოდეს");
+
+  add(a.incomeProof==="yes"?7:a.incomeProof==="partial"?2:-8,"შემოსავლის დადასტურება","finance",
+      "შემოსავლის დოკუმენტურად დადასტურება შეგიძლიათ","შემოსავლის დამადასტურებელი დოკუმენტი არ გაქვთ");
+
+  const travelMap={"0":-15,"1_2":-7,"3_5":2,"6_10":10,"10_plus":18};
+  add(travelMap[a.countryCount]||0,"მოგზაურობის ქვეყნების რაოდენობა","travel",
+      a.countryCount==="10_plus"?"10-ზე მეტ ქვეყანაში მოგზაურობის გამოცდილება":"მოგზაურობის გამოცდილება",
+      "მოგზაურობის ისტორია შეზღუდულია");
+
+  add(a.recentTravel==="yes"?5:-3,"ბოლო 2 წლის მოგზაურობა","travel","ბოლო წლებში საერთაშორისო მოგზაურობა გაქვთ","ბოლო წლებში მოგზაურობის აქტივობა არ ჩანს");
+  const strongVisas=(a.strongVisas||[]).length;
+  if(strongVisas) add(Math.min(strongVisas*2,10),"ძლიერი ვიზები/ვიზიტები","travel","სხვა ქვეყნების ვიზებისა და ვიზიტების გამოცდილება",null);
+
+  if(a.overstay==="yes") add(-22,"ნებადართული ვადის გადაცილება","history",null,"ვადის გადაცილება მნიშვნელოვანი რისკის ფაქტორია და ზუსტ ახსნას მოითხოვს");
+  if(a.hadUsVisa==="yes") add(7,"წინა აშშ-ის ვიზა","history","წინა აშშ-ის ვიზის ისტორია",null);
+
+  const refusalMap={"0":4,"1":-6,"2":-13,"3_plus":-20};
+  add(refusalMap[a.refusalCount]||0,"აშშ-ის ვიზაზე უარების რაოდენობა","history",
+      a.refusalCount==="0"?"წინა უარი არ გაქვთ":null,
+      a.refusalCount!=="0"?"წინა უარი ან უარები საჭიროებს მკაფიო და ნამდვილ ახსნას":null);
+
+  if(a.usFamily==="yes_illegal") add(-14,"აშშ-ში არალეგალურად მყოფი ოჯახის წევრი","ties",null,"აშშ-ში არალეგალურად მყოფი ოჯახის წევრი შეიძლება გახდეს დამატებითი შეკითხვების საფუძველი");
+  if(a.usFamily==="yes_legal") impacts.push({label:"აშშ-ში ლეგალურად მყოფი ოჯახის წევრი",points:0});
+
+  if(a.property==="one") add(4,"უძრავი ქონება","ties","უძრავი ქონება სამშობლოსთან კავშირს აძლიერებს",null);
+  if(a.property==="multiple") add(7,"რამდენიმე უძრავი ქონება","ties","რამდენიმე უძრავი ქონება","",null);
+  if(a.business==="yes") add(8,"საკუთარი ბიზნესი","ties","საკუთარი ბიზნესი ან კომპანიის წილი",null);
+  if(a.marital==="married") add(4,"ოჯახური მდგომარეობა","ties","ოჯახური კავშირები",null);
+  if(a.children==="yes") add(5,"შვილები","ties","შვილებთან დაკავშირებული ოჯახური კავშირები",null);
+
+  const durationMap={"1_7":5,"8_14":4,"15_30":0,"31_60":-7,"60_plus":-14};
+  add(durationMap[a.duration]||0,"ვიზიტის ხანგრძლივობა","history",
+      ["1_7","8_14"].includes(a.duration)?"კონკრეტული და შედარებით მოკლე ვიზიტი":"ვიზიტის ხანგრძლივობა რეალისტურია",
+      ["31_60","60_plus"].includes(a.duration)?"ხანგრძლივი ვიზიტი შესაძლოა დამატებით კითხვებს იწვევდეს":null);
+
+  if((a.returnReason||"").length>=45) add(5,"დაბრუნების მიზეზის აღწერა","ties","დაბრუნების მიზეზი კონკრეტულად გაქვთ აღწერილი",null);
+  else add(-5,"დაბრუნების მიზეზის აღწერა","ties",null,"დაბრუნების მიზეზი ზედმეტად მოკლე ან ზოგადია");
+
+  if(a.sponsor==="self") add(4,"მოგზაურობის დაფინანსება","finance","მოგზაურობას თავად აფინანსებთ",null);
+  if(a.sponsor==="other") add(-3,"მოგზაურობის დაფინანსება","finance",null,"დაფინანსების წყარო დამატებით დაზუსტებას საჭიროებს");
+
+  score=clamp(Math.round(score),5,96);
+  Object.keys(cat).forEach(k=>cat[k]=clamp(Math.round(cat[k]),5,98));
+
+  const riskLevel = score>=78 ? "დაბალი რისკი" : score>=52 ? "საშუალო რისკი" : "მაღალი რისკი";
+  const profile = score>=85 ? "ძლიერი და სტაბილური სავიზო პროფილი" :
+                  score>=70 ? "კარგად მომზადებული სავიზო პროფილი" :
+                  score>=52 ? "საშუალო მზადყოფნის სავიზო პროფილი" :
+                  "დამატებით მოსამზადებელი სავიზო პროფილი";
+
+  const questions = buildQuestions(a);
+  const prep = buildPrep(a, risks);
+  const confidence = 94;
+
+  if(!strong.length) strong.push("კითხვარი სრულად და თანმიმდევრულად შეავსეთ");
+  if(!risks.length) risks.push("ინტერვიუზე პასუხების სიზუსტე და მოკლედ გადმოცემა მაინც მნიშვნელოვანია");
+
+  return {score,cat,impacts,strong:[...new Set(strong)],risks:[...new Set(risks)],riskLevel,profile,questions,prep,confidence};
 }
-function buildLikelyQuestions(a){
-  const q=lang==='ka'?['რატომ გსურთ ამერიკაში გამგზავრება?','რამდენი ხნით მიდიხართ და სად დარჩებით?','ვინ აფინანსებს მოგზაურობას?','რას საქმიანობთ და რატომ დაბრუნდებით?']:['Why do you want to visit the United States?','How long will you stay and where?','Who will pay for the trip?','What do you do and why will you return?'];
-  if(a.usRefusal==='yes') q.push(lang==='ka'?'რა შეიცვალა წინა უარის შემდეგ?':'What has changed since your previous refusal?');
-  if(a.usFamily==='yes') q.push(lang==='ka'?'ვინ გყავთ აშშ-ში და რა სტატუსი აქვს?':'Who is your relative in the U.S. and what is their status?');
-  if(a.sponsor!=='self') q.push(lang==='ka'?'რატომ გიფინანსებთ სხვა პირი ან კომპანია?':'Why is another person or company funding your trip?');
+
+function buildQuestions(a){
+  const q=["რატომ გსურთ ამ კონკრეტულ პერიოდში ამერიკაში გამგზავრება?","ვინ აფინანსებს მოგზაურობას და რა არის დაგეგმილი ბიუჯეტი?","რატომ დაბრუნდებით მოგზაურობის დასრულების შემდეგ?"];
+  if(a.refusalCount!=="0") q.push("რა შეიცვალა წინა უარის შემდეგ?");
+  if(a.usFamily==="yes_illegal") q.push("რა სტატუსით იმყოფება თქვენი ოჯახის წევრი ამერიკაში და ვისთან გეგმავთ დარჩენას?");
+  if(a.usFamily==="yes_legal") q.push("ვინ არის თქვენი ოჯახის წევრი ამერიკაში და რა სტატუსით იმყოფება?");
+  if(a.countryCount==="0"||a.countryCount==="1_2") q.push("რატომ არის ამერიკა თქვენი პირველი ან ერთ-ერთი პირველი მნიშვნელოვანი საერთაშორისო მოგზაურობა?");
+  if(a.employment==="unemployed") q.push("რა ფინანსური და პირადი საფუძველი გაქვთ მოგზაურობისთვის და დაბრუნებისთვის?");
+  if(["31_60","60_plus"].includes(a.duration)) q.push("რატომ გჭირდებათ ასეთი ხანგრძლივი ვიზიტი?");
+  q.push("რას საქმიანობთ და რამდენი ხანია?","რომელ ქალაქებში მიდიხართ და რას გეგმავთ ყოველდღიურად?");
   return q.slice(0,7);
 }
-function downloadReport(record,res){const lines=[`USA Visa Readiness Report`,`Name: ${record.fullName||''}`,`Phone: ${record.phone||''}`,`Score: ${res.score}/100`,'','Strong points:',...res.strong.map(x=>'- '+x),'','Needs improvement:',...res.weak.map(x=>'- '+x),'','Likely questions:',...(res.questions||[]).map(x=>'- '+x),'','Disclaimer: This index is informational only. Final decision is made by the consular officer.']; const blob=new Blob([lines.join('\n')],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='visa-readiness-report.txt'; a.click();}
-let cachedApplicants = [];
-async function renderAdmin(){
-  app.innerHTML=document.getElementById('adminTemplate').innerHTML;
-  translateRoot();
-  document.getElementById('homeBtn').onclick=renderHome;
-  document.getElementById('exportBtn').onclick=exportCSV;
-  document.getElementById('clearBtn').onclick=()=>{if(confirm('Clear local browser data?')){localStorage.removeItem(STORAGE_KEY);renderAdmin();}};
-  document.getElementById('searchInput').oninput=renderApplicants;
-  const box=document.getElementById('applicantsList');
-  box.innerHTML='<p class="muted">Loading applicants...</p>';
-  try {
-    const online = await loadApplicantsOnline();
-    cachedApplicants = online || JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
-  } catch(e) {
-    console.warn('Online load failed:', e);
-    cachedApplicants = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+
+function buildPrep(a, risks){
+  const p=["გადაამოწმეთ DS-160-ის ყველა პასუხი და დარწმუნდით, რომ ინტერვიუს პასუხები ზუსტად ემთხვევა განაცხადს.","მოამზადეთ მოკლე, პირდაპირი და ფაქტობრივი პასუხები მოგზაურობის მიზანზე, დაფინანსებასა და დაბრუნების მიზეზზე."];
+  if(a.refusalCount!=="0") p.push("მოამზადეთ ზუსტი პასუხი კითხვაზე: რა შეიცვალა წინა უარის შემდეგ?");
+  if(a.incomeProof!=="yes") p.push("არსებობის შემთხვევაში, მოამზადეთ შემოსავლისა და საქმიანობის დამადასტურებელი რეალური დოკუმენტები.");
+  if(a.usFamily!=="no") p.push("არ დამალოთ ოჯახის წევრი აშშ-ში; ზუსტად იცოდეთ ნათესაობა და მისი საიმიგრაციო სტატუსი.");
+  if(["31_60","60_plus"].includes(a.duration)) p.push("გქონდეთ დასაბუთებული და რეალისტური ახსნა ხანგრძლივი ვიზიტისთვის.");
+  p.push("არ გამოიყენოთ დაზეპირებული ან გამოგონილი პასუხები.");
+  return [...new Set(p)].slice(0,6);
+}
+
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+
+async function finishAssessment(){
+  const result=scoreAssessment(answers);
+  lastResult=result;
+  const record={...answers,score:result.score,riskLevel:result.riskLevel,createdAt:new Date().toISOString(),status:"New"};
+  saveLocal(record);
+  if(firebaseReady && db){
+    try{await db.collection("applicants").add(record);}catch(e){console.warn("Online save failed",e);}
   }
-  renderApplicants();
-}
-function renderApplicants(){
-  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
-  const list=(cachedApplicants||[]).filter(r=>(r.fullName||'').toLowerCase().includes(q)||(r.phone||'').toLowerCase().includes(q));
-  const box=document.getElementById('applicantsList');
-  if(!list.length){box.innerHTML='<p class="muted">No applicants yet.</p>'; return;}
-  box.innerHTML=list.map(r=>`<div class="applicant"><div class="applicant-top"><div><b>${r.fullName||'No name'}</b><div class="muted">${r.createdAt ? new Date(r.createdAt).toLocaleString() : ''} ${r.id ? '• Online' : '• Local'}</div></div><div class="badge">${r.score||0}/100</div></div><div class="details"><div class="detail">Phone<br><b>${r.phone||'-'}</b></div><div class="detail">Residence<br><b>${r.residence||'-'}</b></div><div class="detail">Refusal<br><b>${r.usRefusal||'-'}</b></div><div class="detail">Employment<br><b>${r.employment||'-'}</b></div><div class="detail">Purpose<br><b>${r.purpose||'-'}</b></div><div class="detail">Help<br><b>${r.helpNeeded||'-'}</b></div></div></div>`).join('');
-}
-function exportCSV(){const list=(cachedApplicants && cachedApplicants.length) ? cachedApplicants : JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); if(!list.length) return alert('No data'); const keys=[...new Set(list.flatMap(Object.keys))].filter(k=>k!=='_lastResult'); const csv=[keys.join(','),...list.map(r=>keys.map(k=>'"'+String(r[k]??'').replaceAll('"','""')+'"').join(','))].join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='applicants.csv'; a.click();}
-
-function escapeHtml(value){return String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
-function openWhatsApp(message){window.open('https://wa.me/995571563035?text='+encodeURIComponent(message),'_blank','noopener');}
-
-const consulQuestions={
-  ka:['რატომ გსურთ ამერიკაში გამგზავრება?','რამდენი ხნით გეგმავთ დარჩენას?','სად დარჩებით ამერიკაში?','ვინ აფინანსებს მოგზაურობას?','რას საქმიანობთ და რამდენი ხანია?','გყავთ ნათესავი ამერიკაში?','გქონიათ ადრე ამერიკის ვიზაზე უარი?','რატომ დაბრუნდებით საქართველოში?'],
-  en:['Why do you want to visit the United States?','How long do you plan to stay?','Where will you stay in the United States?','Who will pay for your trip?','What do you do and how long have you done it?','Do you have relatives in the United States?','Have you ever been refused a U.S. visa?','Why will you return to your country?']
-};
-let consulIndex=0,consulAnswers=[];
-function renderConsul(){
-  app.innerHTML=document.getElementById('consulTemplate').innerHTML;translateRoot();consulIndex=0;consulAnswers=[];
-  document.getElementById('exitToolBtn').onclick=renderHome;
-  document.getElementById('sendAnswerBtn').onclick=submitConsulAnswer;
-  document.getElementById('chatAnswer').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')submitConsulAnswer();});
-  addChat('officer',consulQuestions[lang][0]);
-}
-function addChat(role,text){const box=document.getElementById('chatBox');const div=document.createElement('div');div.className='chat '+role;div.innerHTML=`<b>${role==='officer'?(lang==='ka'?'კონსული':'Consular Officer'):(lang==='ka'?'თქვენ':'You')}</b><p>${escapeHtml(text)}</p>`;box.appendChild(div);box.scrollTop=box.scrollHeight;}
-function submitConsulAnswer(){const input=document.getElementById('chatAnswer');const value=input.value.trim();if(!value)return;addChat('user',value);consulAnswers.push(value);input.value='';consulIndex++;if(consulIndex<consulQuestions[lang].length){setTimeout(()=>addChat('officer',consulQuestions[lang][consulIndex]),250);}else{document.getElementById('sendAnswerBtn').disabled=true;setTimeout(renderConsulResult,350);}}
-function assessInterview(){
-  let score=40,good=[],improve=[];
-  consulAnswers.forEach((a,i)=>{const words=a.split(/\s+/).filter(Boolean).length;const vague=/don't know|not sure|maybe|რავი|არ ვიცი|ალბათ/i.test(a);if(words>=5&&words<=45&&!vague){score+=7;good.push(`${i+1}. ${lang==='ka'?'პასუხი იყო კონკრეტული და გასაგები':'Answer was clear and specific'}`);}else{score+=2;improve.push(`${i+1}. ${lang==='ka'?'დააკონკრეტეთ პასუხი მოკლედ და ფაქტებზე დაყრდნობით':'Make the answer brief, specific and fact-based'}`);}});
-  score=Math.min(96,score);if(!good.length)good.push(lang==='ka'?'გასაუბრება სრულად დაასრულეთ':'You completed the full interview');if(!improve.length)improve.push(lang==='ka'?'ივარჯიშეთ მშვიდ ტონში და ზედმეტი დეტალების გარეშე':'Practice calmly and avoid unnecessary detail');return{score,good,improve};
-}
-function renderConsulResult(){const r=assessInterview();app.innerHTML=document.getElementById('consulResultTemplate').innerHTML;translateRoot();document.querySelector('.score-circle').style.setProperty('--score',r.score+'%');document.getElementById('interviewScore').textContent=r.score;document.getElementById('goodAnswerList').innerHTML=r.good.map(x=>`<li>✔️ ${escapeHtml(x)}</li>`).join('');document.getElementById('improveAnswerList').innerHTML=r.improve.map(x=>`<li>⚠️ ${escapeHtml(x)}</li>`).join('');const tips=lang==='ka'?['უპასუხეთ პირდაპირ კითხვას.','არ დამალოთ უარი, ნათესავი ან წინა მოგზაურობა.','თქვენი გეგმა უნდა ემთხვეოდეს DS-160-ს.','არ დაიზეპიროთ ხელოვნური ტექსტი.']:['Answer the exact question asked.','Do not hide refusals, relatives or travel history.','Your plan must match the DS-160.','Do not memorize an artificial script.'];document.getElementById('practiceTipsList').innerHTML=tips.map(x=>`<li>• ${x}</li>`).join('');document.getElementById('consulWhatsapp').onclick=()=>openWhatsApp('გამარჯობა, გავიარე ვირტუალური კონსულის სიმულაცია და მსურს გასაუბრებისთვის მომზადება.');document.getElementById('consulRestart').onclick=renderConsul;document.getElementById('consulHome').onclick=renderHome;}
-
-function renderDsChecker(){app.innerHTML=document.getElementById('dsTemplate').innerHTML;translateRoot();document.getElementById('exitToolBtn').onclick=renderHome;document.getElementById('checkDsBtn').onclick=checkDsText;}
-function checkDsText(){
-  const text=document.getElementById('dsText').value.trim(),type=document.getElementById('dsType').value,box=document.getElementById('dsResult');if(!text){box.innerHTML='<div class="notice error">Please paste text first.</div>';return;}
-  const words=text.split(/\s+/).filter(Boolean);const issues=[],positives=[];
-  if(words.length<8)issues.push(lang==='ka'?'ტექსტი ზედმეტად მოკლეა და შეიძლება ბუნდოვანი იყოს.':'The text may be too short and vague.');
-  if(words.length>90)issues.push(lang==='ka'?'ტექსტი ზედმეტად გრძელია; შეამცირეთ მხოლოდ მნიშვნელოვან ფაქტებამდე.':'The text is long; reduce it to relevant facts.');
-  if(/guarantee|definitely|100%|always/i.test(text))issues.push(lang==='ka'?'მოერიდეთ აბსოლუტურ ან გარანტიის გამომხატველ სიტყვებს.':'Avoid absolute or guarantee-like wording.');
-  if(/work|job|employment/i.test(text)&&type==='purpose'&&/tourism|visit|vacation/i.test(text))issues.push(lang==='ka'?'მოგზაურობის მიზანში სამუშაოს ხსენება შეიძლება დამატებით განმარტებას საჭიროებდეს.':'Mentioning work in a tourism purpose may require clarification.');
-  if(!/[.!?]$/.test(text))issues.push(lang==='ka'?'დაასრულეთ ტექსტი სასვენი ნიშნით.':'End the text with punctuation.');
-  if(/\bi\b/.test(text))issues.push(lang==='ka'?'ინგლისურში პირის ნაცვალსახელი „I“ დიდი ასოთი უნდა დაიწეროს.':'The pronoun “I” must be capitalized.');
-  if(/\b(very very|and and|the the)\b/i.test(text))issues.push(lang==='ka'?'აღმოჩენილია გამეორებული სიტყვა.':'A repeated word was detected.');
-  if(words.length>=8&&words.length<=90)positives.push(lang==='ka'?'ტექსტის მოცულობა მისაღებია.':'The text length is reasonable.');
-  if(/[.!?]$/.test(text))positives.push(lang==='ka'?'ტექსტი დასრულებული წინადადებით არის წარმოდგენილი.':'The text appears to be a complete sentence.');
-  positives.push(lang==='ka'?'სისტემამ ფაქტები არ შეცვალა და ახალი ინფორმაცია არ მოუგონია.':'No facts were changed or invented.');
-  const rating=Math.max(25,Math.min(95,90-issues.length*12));
-  box.innerHTML=`<div class="ds-output"><h2>${lang==='ka'?'შემოწმების შედეგი':'Review result'}: ${rating}/100</h2><div class="grid2"><div class="mini-card"><h3>${lang==='ka'?'კარგი მხარეები':'Positive points'}</h3><ul>${positives.map(x=>`<li>✔️ ${escapeHtml(x)}</li>`).join('')}</ul></div><div class="mini-card"><h3>${lang==='ka'?'შესამოწმებელი საკითხები':'Items to review'}</h3><ul>${(issues.length?issues:[lang==='ka'?'ავტომატურმა შემოწმებამ მნიშვნელოვანი პრობლემა ვერ აღმოაჩინა.':'No major issue was detected by the automated check.']).map(x=>`<li>⚠️ ${escapeHtml(x)}</li>`).join('')}</ul></div></div><div class="notice">${lang==='ka'?'ეს არის ავტომატური ენობრივი და ლოგიკური შემოწმება, არა იურიდიული დასკვნა.':'This is an automated language and logic check, not legal advice.'}</div><button class="primary wide" id="dsWhatsapp">WhatsApp კონსულტაცია</button></div>`;
-  document.getElementById('dsWhatsapp').onclick=()=>openWhatsApp('გამარჯობა, მსურს DS-160 განაცხადის ტექსტის პროფესიონალური გადამოწმება.');
+  renderResult(record,result);
 }
 
-render();
+function renderResult(record,res){
+  app.innerHTML=clone("resultTemplate");
+  qs("#scoreRing",app).style.setProperty("--score",res.score+"%");
+  qs("#scoreValue",app).textContent=res.score;
+  qs("#profileTitle",app).textContent=res.profile;
+  const badge=qs("#riskBadge",app);
+  badge.textContent=res.riskLevel;
+  badge.className="risk-badge "+(res.score>=78?"risk-low":res.score>=52?"risk-mid":"risk-high");
+  qs("#confidenceText",app).textContent=`შეფასების სანდოობა: ${res.confidence}%`;
+  qs("#summaryText",app).textContent=`შედეგი ეფუძნება ${res.impacts.length} განსხვავებულ ფაქტორს. ქულა არ არის ვიზის მიღების ალბათობა — ეს არის მზადყოფნის სიმულაციური ინდექსი.`;
+
+  const labels={employment:"დასაქმება",travel:"მოგზაურობა",finance:"ფინანსები",ties:"სამშობლოსთან კავშირები",history:"სავიზო ისტორია"};
+  qs("#categoryGrid",app).innerHTML=Object.entries(res.cat).map(([k,v])=>`<div class="metric"><small>${labels[k]}</small><b>${v}/100</b></div>`).join("");
+  qs("#strongList",app).innerHTML=res.strong.map(x=>`<li>${x}</li>`).join("");
+  qs("#riskList",app).innerHTML=res.risks.map(x=>`<li>${x}</li>`).join("");
+  qs("#impactList",app).innerHTML=res.impacts.sort((a,b)=>Math.abs(b.points)-Math.abs(a.points)).map(x=>`<div class="impact-item"><span>${x.label}</span><span class="${x.points>=0?"impact-pos":"impact-neg"}">${x.points>0?"+":""}${x.points}</span></div>`).join("");
+  qs("#questionList",app).innerHTML=res.questions.map(x=>`<li>${x}</li>`).join("");
+  qs("#prepList",app).innerHTML=res.prep.map(x=>`<li>${x}</li>`).join("");
+  qs("#openInterviewBtn",app).onclick=startInterview;
+  qs("#restartBtn",app).onclick=()=>{step=0;answers={};renderAssessment();};
+  qs("#downloadBtn",app).onclick=()=>downloadReport(record,res);
+  showDisclaimer();
+}
+
+function showDisclaimer(){
+  const m=document.getElementById("disclaimerModal");m.classList.remove("hidden");
+  document.getElementById("closeDisclaimer").onclick=()=>m.classList.add("hidden");
+}
+
+function downloadReport(record,res){
+  const txt=[
+    "USA VISA AI ADVISOR PRO — SIMULATION REPORT",
+    `Name: ${record.fullName||""}`,
+    `Score: ${res.score}/100`,
+    `Risk: ${res.riskLevel}`,
+    "",
+    "Strong points:",
+    ...res.strong.map(x=>"- "+x),
+    "",
+    "Risks:",
+    ...res.risks.map(x=>"- "+x),
+    "",
+    "Likely interview questions:",
+    ...res.questions.map((x,i)=>`${i+1}. ${x}`),
+    "",
+    "Disclaimer: This is a simulated informational assessment and not an official U.S. consular decision."
+  ].join("\n");
+  const blob=new Blob([txt],{type:"text/plain;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="usa-visa-simulation-report.txt";a.click();
+}
+
+const baseInterviewQuestions=[
+  "რატომ გსურთ ამერიკაში გამგზავრება?",
+  "რამდენი დღით მიდიხართ და რომელ ქალაქებში?",
+  "ვინ აფინანსებს თქვენს მოგზაურობას?",
+  "რას საქმიანობთ და რამდენი ხანია?",
+  "გყავთ ოჯახის წევრი ამერიკაში?",
+  "გქონიათ ადრე აშშ-ის ვიზაზე უარი?",
+  "რატომ დაბრუნდებით მოგზაურობის დასრულების შემდეგ?"
+];
+
+function getInterviewQuestions(){
+  const q=[...baseInterviewQuestions];
+  if(answers.refusalCount && answers.refusalCount!=="0") q.splice(6,0,"რა შეიცვალა წინა უარის შემდეგ?");
+  if(answers.usFamily==="yes_illegal") q.splice(5,0,"რა სტატუსით იმყოფება თქვენი ოჯახის წევრი აშშ-ში?");
+  return q;
+}
+
+function startInterview(){
+  interviewIndex=0;interviewAnswers=[];renderInterview();
+}
+
+function renderInterview(){
+  const questions=getInterviewQuestions();
+  app.innerHTML=clone("interviewTemplate");
+  qs("#interviewCounter",app).textContent=`კითხვა ${interviewIndex+1} / ${questions.length}`;
+  qs("#interviewProgressBar",app).style.width=`${Math.round((interviewIndex+1)/questions.length*100)}%`;
+  qs("#interviewQuestion",app).textContent=questions[interviewIndex];
+  qs("#exitInterviewBtn",app).onclick=renderHome;
+  qs("#nextInterviewBtn",app).textContent=interviewIndex===questions.length-1?"დასრულება":"შემდეგი კითხვა";
+  qs("#nextInterviewBtn",app).onclick=()=>{
+    const text=qs("#interviewAnswer",app).value.trim();
+    if(!text){alert("გთხოვთ უპასუხოთ კითხვას.");return;}
+    interviewAnswers.push({question:questions[interviewIndex],answer:text});
+    if(interviewIndex<questions.length-1){interviewIndex++;renderInterview();} else renderInterviewResult();
+  };
+}
+
+function renderInterviewResult(){
+  app.innerHTML=clone("interviewResultTemplate");
+  const analysis=analyzeInterview(interviewAnswers);
+  const metrics=[
+    ["სიცხადე",analysis.clarity],["კონკრეტულობა",analysis.specificity],["თანმიმდევრულობა",analysis.consistency],["დაბრუნების კავშირები",analysis.ties],["საერთო მზადყოფნა",analysis.overall]
+  ];
+  qs("#interviewMetrics",app).innerHTML=metrics.map(([l,v])=>`<div class="metric"><small>${l}</small><b>${v}/100</b></div>`).join("");
+  qs("#goodAnswers",app).innerHTML=analysis.good.map(x=>`<li>${x}</li>`).join("");
+  qs("#weakAnswers",app).innerHTML=analysis.weak.map(x=>`<li>${x}</li>`).join("");
+  qs("#interviewTips",app).innerHTML=analysis.tips.map(x=>`<li>${x}</li>`).join("");
+  qs("#repeatInterviewBtn",app).onclick=startInterview;
+  qs("#backHomeBtn",app).onclick=renderHome;
+}
+
+function analyzeInterview(items){
+  let clarity=70,specificity=65,consistency=78,ties=60;
+  const good=[],weak=[],tips=[];
+  items.forEach((item,i)=>{
+    const a=item.answer;
+    const words=a.split(/\s+/).filter(Boolean).length;
+    if(words>=12){clarity+=2;specificity+=3;good.push(`კითხვა ${i+1}: პასუხი საკმარისად დეტალური იყო.`);}
+    else{clarity-=7;specificity-=8;weak.push(`კითხვა ${i+1}: პასუხი ზედმეტად მოკლე იყო — "${a.slice(0,70)}${a.length>70?"…":""}"`);}
+    if(/\b\d+\b/.test(a)) specificity+=2;
+    if(/სამსახ|ბიზნეს|ოჯახ|შვილ|უნივერსიტეტ|ქონებ|დაბრუნ/i.test(a)) ties+=4;
+    if(/არ ვიცი|ალბათ|რავი|შეიძლება/i.test(a)){clarity-=5;weak.push(`კითხვა ${i+1}: გაურკვეველი ფორმულირება გამოიყენეთ.`);}
+  });
+  if(!good.length) good.push("გასაუბრება ბოლომდე დაასრულეთ.");
+  if(!weak.length) weak.push("ყურადღება მიაქციეთ პასუხების მოკლედ და პირდაპირ გადმოცემას.");
+  tips.push("უპასუხეთ მხოლოდ იმ კითხვას, რომელიც დაგისვეს — ზედმეტი ინფორმაციის გარეშე.");
+  tips.push("გამოიყენეთ კონკრეტული თარიღები, ქალაქები და რეალური ფაქტები, როცა ეს ბუნებრივად შეესაბამება კითხვას.");
+  tips.push("არ დამალოთ წინა უარი, ნათესავი ან სხვა მნიშვნელოვანი გარემოება.");
+  tips.push("ყველა პასუხი უნდა ემთხვეოდეს DS-160-ში შეყვანილ ინფორმაციას.");
+  clarity=clamp(clarity,20,96);specificity=clamp(specificity,20,96);consistency=clamp(consistency,30,96);ties=clamp(ties,20,96);
+  return {clarity,specificity,consistency,ties,overall:Math.round((clarity+specificity+consistency+ties)/4),good,weak,tips};
+}
+
+function renderDs160(){
+  app.innerHTML=clone("ds160Template");
+  qs("#dsBackBtn",app).onclick=renderHome;
+  qs("#checkDsBtn",app).onclick=()=>{
+    const fields=[
+      ["მოგზაურობის მიზანი",qs("#dsPurpose",app).value.trim()],
+      ["სამუშაო მოვალეობები",qs("#dsJob",app).value.trim()],
+      ["უარის/გარემოების ახსნა",qs("#dsRefusal",app).value.trim()]
+    ];
+    const issues=[];
+    fields.forEach(([label,text])=>{
+      if(!text) return;
+      const words=text.split(/\s+/).filter(Boolean).length;
+      if(words<8) issues.push({label,type:"ყურადღება",msg:"ტექსტი ძალიან მოკლეა და შესაძლოა ბუნდოვნად გამოიყურებოდეს."});
+      if(words>90) issues.push({label,type:"ყურადღება",msg:"ტექსტი ზედმეტად გრძელია; DS-160-ში ჩვეულებრივ საჭიროა მოკლე და ფაქტობრივი აღწერა."});
+      if(/\bmaybe\b|\bprobably\b|\bnot sure\b/i.test(text)) issues.push({label,type:"რისკი",msg:"გამოყენებულია გაურკვეველი ფორმულირება (maybe/probably/not sure)."});
+      if(/\bvisa\b.*\bguarantee\b/i.test(text)) issues.push({label,type:"რისკი",msg:"არ გამოიყენოთ გარანტიის მსგავსი ფორმულირება."});
+      const sentences=text.split(/[.!?]+/).filter(Boolean);
+      if(sentences.some(s=>s.trim().split(/\s+/).length>35)) issues.push({label,type:"სტილი",msg:"ერთ-ერთი წინადადება ზედმეტად გრძელია; დაყავით მოკლე წინადადებებად."});
+      if(!/[.!?]$/.test(text)) issues.push({label,type:"სტილი",msg:"ტექსტის ბოლოს სასვენი ნიშანი არ არის."});
+    });
+    if(!fields.some(x=>x[1])){alert("ჩასვით მინიმუმ ერთი ტექსტი.");return;}
+    if(!issues.length) issues.push({label:"საერთო შეფასება",type:"კარგია",msg:"აშკარა სტრუქტურული პრობლემა ვერ გამოვლინდა. ფაქტები მაინც გადაამოწმეთ საკუთარ დოკუმენტებთან და წინა განაცხადებთან."});
+    const box=qs("#dsResults",app);box.classList.remove("hidden");box.className="ds-result-box";
+    box.innerHTML=`<h3>შემოწმების შედეგი</h3>${issues.map(x=>`<div class="issue"><b>${x.type}: ${x.label}</b><div class="muted">${x.msg}</div></div>`).join("")}
+    <div class="simulation-warning">ეს შემოწმება არის ტექსტური სიმულაცია და ვერ ადასტურებს ინფორმაციის სამართლებრივ ან ფაქტობრივ სისწორეს.</div>`;
+  };
+}
+
+function saveLocal(record){
+  const list=getApplicants();list.unshift(record);localStorage.setItem(STORAGE_KEY,JSON.stringify(list.slice(0,500)));
+}
+function getApplicants(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch{return[];}}
+
+async function renderAdmin(){
+  app.innerHTML=clone("adminTemplate");
+  qs("#adminHomeBtn",app).onclick=renderHome;
+  let list=getApplicants();
+  if(firebaseReady && db){
+    try{
+      const snap=await db.collection("applicants").orderBy("createdAt","desc").limit(300).get();
+      list=snap.docs.map(d=>({id:d.id,...d.data()}));
+    }catch(e){console.warn("Admin online load failed",e);}
+  }
+  window.__adminList=list;
+  renderStats(list);
+  qs("#adminSearch",app).oninput=renderAdminList;
+  qs("#scoreFilter",app).onchange=renderAdminList;
+  qs("#exportCsvBtn",app).onclick=()=>exportCsv(list);
+  renderAdminList();
+}
+
+function renderStats(list){
+  const today=new Date().toDateString();
+  const todayCount=list.filter(x=>new Date(x.createdAt||0).toDateString()===today).length;
+  const avg=list.length?Math.round(list.reduce((s,x)=>s+(x.score||0),0)/list.length):0;
+  const high=list.filter(x=>(x.score||0)>=80).length;
+  const refusal=list.filter(x=>x.refusalCount && x.refusalCount!=="0").length;
+  const stats=[["სულ განაცხადი",list.length],["დღეს",todayCount],["საშუალო ქულა",avg],["80+ შეფასება",high],["უარის ისტორია",refusal]];
+  qs("#statsGrid",app).innerHTML=stats.map(([l,v])=>`<div class="metric"><small>${l}</small><b>${v}</b></div>`).join("");
+}
+
+function renderAdminList(){
+  const all=window.__adminList||[];
+  const q=(qs("#adminSearch",app)?.value||"").toLowerCase();
+  const filter=qs("#scoreFilter",app)?.value||"all";
+  let list=all.filter(r=>(r.fullName||"").toLowerCase().includes(q)||(r.phone||"").toLowerCase().includes(q));
+  if(filter==="high") list=list.filter(r=>(r.score||0)>=80);
+  if(filter==="mid") list=list.filter(r=>(r.score||0)>=50&&(r.score||0)<80);
+  if(filter==="low") list=list.filter(r=>(r.score||0)<50);
+  const box=qs("#adminList",app);
+  if(!list.length){box.innerHTML=`<p class="muted">მონაცემები არ მოიძებნა.</p>`;return;}
+  box.innerHTML=list.map(r=>`<div class="applicant">
+    <div class="applicant-top"><div><b>${escapeHtml(r.fullName||"უსახელო")}</b><div class="muted">${r.createdAt?new Date(r.createdAt).toLocaleString():""}</div></div><div class="badge">${r.score||0}/100</div></div>
+    <div class="details">
+      <div class="detail">ტელეფონი<b>${escapeHtml(r.phone||"-")}</b></div>
+      <div class="detail">დასაქმება<b>${escapeHtml(r.employment||"-")}</b></div>
+      <div class="detail">სამუშაო წლები<b>${escapeHtml(r.jobYears||"-")}</b></div>
+      <div class="detail">ქვეყნები<b>${escapeHtml(r.countryCount||"-")}</b></div>
+      <div class="detail">აშშ-ში ოჯახის წევრი<b>${escapeHtml(r.usFamily||"-")}</b></div>
+      <div class="detail">უარი<b>${escapeHtml(r.refusalCount||"0")}</b></div>
+      <div class="detail">რისკი<b>${escapeHtml(r.riskLevel||"-")}</b></div>
+      <div class="detail">კონსულტაცია<b>${escapeHtml(r.helpNeeded||"-")}</b></div>
+    </div>
+    <div class="nav-row">
+      <a class="secondary link-btn" target="_blank" href="https://wa.me/${normalizePhone(r.phone)}">WhatsApp</a>
+      <a class="secondary link-btn" href="tel:${escapeHtml(r.phone||"")}">დარეკვა</a>
+    </div>
+  </div>`).join("");
+}
+
+function normalizePhone(p){return String(p||"").replace(/\D/g,"").replace(/^0/,"995");}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+function exportCsv(list){
+  if(!list.length){alert("მონაცემები არ არის.");return;}
+  const keys=[...new Set(list.flatMap(Object.keys))];
+  const csv=[keys.join(","),...list.map(r=>keys.map(k=>`"${String(r[k]??"").replaceAll('"','""')}"`).join(","))].join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="visa-applicants-v5.csv";a.click();
+}
+
+renderHome();
