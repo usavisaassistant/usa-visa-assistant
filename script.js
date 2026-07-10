@@ -1,4 +1,5 @@
-const firebaseConfig = {
+appId: "1:10902149878:web:072d17040c05e6b6bd2ad7",
+measurementId: "G-YT7LM28WNS"
   apiKey: "AIzaSyDkHMnxngyfeUES5HfR7u8vNI9nimVvj3c",
   authDomain: "usa-visa-assistant.firebaseapp.com",
   projectId: "usa-visa-assistant",
