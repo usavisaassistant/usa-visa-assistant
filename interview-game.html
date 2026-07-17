@@ -1,0 +1,1561 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#071a39" />
+  <title>საკონსულოს ინტერვიუს სიმულატორი | USA Visa Help</title>
+  <meta name="description" content="აშშ-ის B1/B2 სავიზო ინტერვიუს 10-კითხვიანი საგანმანათლებლო სიმულაცია." />
+  <style>
+:root{
+  --navy:#071a39;
+  --navy-2:#0b2f67;
+  --blue:#1769d2;
+  --blue-soft:#eaf2ff;
+  --red:#c91e3a;
+  --gold:#f1b94f;
+  --ink:#102033;
+  --muted:#67748b;
+  --line:#dfe7f2;
+  --white:#ffffff;
+  --green:#177a4e;
+  --orange:#a85f08;
+  --shadow:0 26px 80px rgba(0,17,48,.25);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  color:var(--ink);
+  background:var(--navy);
+}
+button,a,input{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+.page-bg{
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background:
+    radial-gradient(circle at 12% 8%,rgba(65,117,202,.58),transparent 34%),
+    radial-gradient(circle at 88% 12%,rgba(201,30,58,.23),transparent 30%),
+    linear-gradient(145deg,#071a39,#0b2d61 55%,#06142d);
+}
+.page-bg:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  opacity:.4;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:42px 42px;
+}
+
+.topbar{
+  max-width:1180px;
+  margin:auto;
+  padding:22px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:white;
+  text-decoration:none;
+}
+.brand-flag{
+  width:50px;
+  height:50px;
+  display:grid;
+  place-items:center;
+  border-radius:17px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.17);
+  font-size:25px;
+}
+.brand strong{display:block;letter-spacing:.08em;font-size:14px}
+.brand small{display:block;color:#c7d6ed;margin-top:4px}
+.home-link{
+  color:white;
+  text-decoration:none;
+  border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.1);
+  border-radius:14px;
+  padding:11px 17px;
+  font-weight:800;
+}
+
+.game-shell{
+  max-width:1120px;
+  margin:18px auto 70px;
+  padding:0 20px;
+}
+.welcome-card,.game-screen,.result-screen{
+  background:rgba(255,255,255,.98);
+  border:1px solid rgba(255,255,255,.75);
+  border-radius:30px;
+  box-shadow:var(--shadow);
+  animation:screenIn .48s ease both;
+}
+.welcome-card{
+  min-height:650px;
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  overflow:hidden;
+}
+.welcome-copy{padding:56px}
+.eyebrow{
+  display:inline-block;
+  color:var(--blue);
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+h1,h2,p{margin-top:0}
+.welcome-copy h1{
+  font-size:48px;
+  line-height:1.08;
+  margin-bottom:20px;
+}
+.welcome-copy>p{
+  color:var(--muted);
+  font-size:18px;
+  line-height:1.65;
+}
+.mode-note{
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+  background:#f4f8fe;
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:18px;
+  margin:26px 0;
+}
+.mode-note>span{font-size:27px}
+.mode-note strong{display:block;margin-bottom:6px}
+.mode-note p{margin:0;color:var(--muted);line-height:1.5}
+
+.gender-picker{
+  display:flex;
+  gap:12px;
+  border:0;
+  padding:0;
+  margin:0 0 24px;
+}
+.gender-picker legend{
+  width:100%;
+  font-weight:900;
+  margin-bottom:10px;
+}
+.gender-option{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#f8fbff;
+  font-weight:850;
+  cursor:pointer;
+  transition:.2s;
+}
+.gender-option input{position:absolute;opacity:0;pointer-events:none}
+.gender-option.selected{
+  border-color:var(--blue);
+  background:var(--blue-soft);
+  box-shadow:0 0 0 3px rgba(23,105,210,.08);
+}
+.gender-icon{font-size:25px}
+
+.primary-btn,.secondary-btn{
+  border:0;
+  border-radius:16px;
+  padding:14px 21px;
+  font-weight:900;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;
+}
+.primary-btn{
+  color:white;
+  background:linear-gradient(135deg,#1769d2,#0d3c85);
+  box-shadow:0 12px 26px rgba(20,95,194,.25);
+}
+.secondary-btn{
+  color:#17345f;
+  background:#edf3fa;
+}
+.primary-btn:hover,.secondary-btn:hover,.home-link:hover{transform:translateY(-2px)}
+.primary-btn:active,.secondary-btn:active{transform:translateY(0) scale(.99)}
+.legal-note{
+  color:var(--muted);
+  font-size:12px!important;
+  margin:16px 0 0;
+}
+
+.welcome-scene{
+  min-height:100%;
+  display:grid;
+  place-items:center;
+  padding:38px;
+  background:
+    linear-gradient(rgba(7,26,57,.15),rgba(7,26,57,.55)),
+    linear-gradient(145deg,#dce8f7,#8aa6c9);
+  position:relative;
+  overflow:hidden;
+}
+.welcome-scene:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,transparent 49.5%,rgba(255,255,255,.32) 50%,transparent 50.5%);
+  opacity:.55;
+}
+.mini-window{
+  width:100%;
+  max-width:400px;
+  aspect-ratio:4/5;
+  border-radius:28px;
+  background:linear-gradient(#bcd0e7 0 62%,#23456d 62% 100%);
+  border:8px solid rgba(255,255,255,.5);
+  box-shadow:0 28px 60px rgba(7,26,57,.28);
+  position:relative;
+  overflow:hidden;
+}
+.mini-flag{position:absolute;top:22px;right:25px;font-size:44px;animation:float 3s ease-in-out infinite}
+.mini-desk{position:absolute;left:0;right:0;bottom:26%;height:14%;background:#6c472d;border-top:10px solid #9a6d4a}
+.mini-person{position:absolute;font-size:78px;bottom:31%;filter:drop-shadow(0 12px 10px rgba(0,0,0,.15))}
+.consul-mini{left:16%;animation:breathe 2.6s ease-in-out infinite}
+.applicant-mini{right:12%;animation:breathe 2.6s ease-in-out infinite reverse}
+.mini-bubble{
+  position:absolute;
+  top:22%;
+  left:8%;
+  right:8%;
+  background:white;
+  border-radius:18px;
+  padding:14px;
+  text-align:center;
+  font-weight:900;
+  box-shadow:0 12px 30px rgba(7,26,57,.18);
+  animation:bubbleFloat 2.8s ease-in-out infinite;
+}
+.mini-bubble:after{
+  content:"";
+  position:absolute;
+  left:28%;
+  bottom:-10px;
+  border:10px solid transparent;
+  border-top-color:white;
+  border-bottom:0;
+}
+
+.game-screen{padding:22px}
+.game-status{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-bottom:13px;
+}
+.status-item{
+  border:1px solid var(--line);
+  background:#f8fbff;
+  border-radius:17px;
+  padding:12px 16px;
+}
+.status-item span{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.status-item strong{font-size:18px;color:#153c76}
+.progress-track{
+  height:10px;
+  border-radius:999px;
+  overflow:hidden;
+  background:#e5edf7;
+  margin-bottom:18px;
+}
+.progress-fill{
+  width:10%;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,var(--blue),var(--red));
+  transition:width .45s ease;
+  position:relative;
+}
+.progress-fill:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.5) 50%,transparent 65%);
+  animation:shine 1.8s linear infinite;
+}
+
+.consulate-room{
+  min-height:500px;
+  border-radius:25px;
+  overflow:hidden;
+  position:relative;
+  border:1px solid #bac8da;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.11) 1px,transparent 1px),
+    linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),
+    linear-gradient(180deg,#a9bed7 0,#dce7f2 55%,#cbd6e1 55%,#9baabb 100%);
+  background-size:55px 55px,55px 55px,auto;
+  box-shadow:inset 0 0 80px rgba(11,47,103,.18);
+}
+.wall-details{position:absolute;inset:0;pointer-events:none}
+.seal{
+  position:absolute;
+  left:7%;
+  top:8%;
+  width:78px;
+  height:78px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  color:#f3c55d;
+  font-size:29px;
+  background:#153c76;
+  border:6px solid rgba(255,255,255,.65);
+  box-shadow:0 8px 20px rgba(7,26,57,.2);
+}
+.seal span{font-size:11px;position:absolute;bottom:13px;color:white;letter-spacing:.12em}
+.flag-pole{position:absolute;right:7%;top:8%;width:78px;height:58px}
+.us-flag-css{
+  width:78px;
+  height:50px;
+  position:relative;
+  background:repeating-linear-gradient(to bottom,#b22234 0 4px,#fff 4px 8px);
+  box-shadow:0 7px 12px rgba(7,26,57,.16);
+  animation:flagWave 2.5s ease-in-out infinite;
+  transform-origin:left center;
+}
+.flag-canton{
+  position:absolute;
+  top:0;left:0;
+  width:34px;height:27px;
+  display:grid;place-items:center;
+  color:white;
+  background:#3c3b6e;
+  font-size:7px;
+  line-height:1.2;
+}
+.room-sign{
+  position:absolute;
+  left:50%;
+  top:7%;
+  transform:translateX(-50%);
+  color:#24466e;
+  font-size:12px;
+  letter-spacing:.16em;
+  font-weight:950;
+  background:rgba(255,255,255,.58);
+  border:1px solid rgba(255,255,255,.8);
+  border-radius:999px;
+  padding:9px 16px;
+}
+
+.speech-bubble{
+  position:absolute;
+  z-index:20;
+  top:18%;
+  left:23%;
+  width:54%;
+  min-height:105px;
+  background:white;
+  border-radius:22px;
+  padding:16px 20px 18px;
+  box-shadow:0 18px 45px rgba(7,26,57,.23);
+  border:1px solid rgba(255,255,255,.8);
+  animation:bubbleIn .35s ease both;
+}
+.speech-bubble:after{
+  content:"";
+  position:absolute;
+  left:18%;
+  bottom:-16px;
+  border:16px solid transparent;
+  border-top-color:white;
+  border-bottom:0;
+}
+.speaker-label{
+  display:block;
+  color:var(--blue);
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.08em;
+  margin-bottom:6px;
+}
+.speech-bubble p{
+  margin:0;
+  font-size:20px;
+  line-height:1.45;
+  font-weight:900;
+  min-height:29px;
+}
+.typing-dots{display:none;gap:5px;height:20px;align-items:center}
+.typing-dots.show{display:flex}
+.typing-dots i{
+  width:7px;height:7px;border-radius:50%;background:#6d7d92;
+  animation:dotPulse 1s infinite;
+}
+.typing-dots i:nth-child(2){animation-delay:.15s}
+.typing-dots i:nth-child(3){animation-delay:.3s}
+
+.interview-stage{position:absolute;inset:0}
+.character{
+  position:absolute;
+  z-index:8;
+  width:180px;
+  height:280px;
+  bottom:102px;
+  animation:breathe 3s ease-in-out infinite;
+}
+.consul-character{left:12%}
+.applicant-character{right:10%;animation-delay:.5s}
+.character-shadow{
+  position:absolute;
+  left:20px;
+  right:20px;
+  bottom:-10px;
+  height:22px;
+  background:rgba(7,26,57,.18);
+  filter:blur(8px);
+  border-radius:50%;
+}
+.torso{
+  position:absolute;
+  left:26px;
+  right:26px;
+  bottom:0;
+  height:125px;
+  border-radius:54px 54px 22px 22px;
+}
+.suit{background:#162c4d}
+.applicant-shirt{background:#2d639e}
+.shirt{
+  position:absolute;
+  top:0;left:50%;
+  width:48px;height:80px;
+  transform:translateX(-50%);
+  background:#f5f7fa;
+  clip-path:polygon(0 0,100% 0,74% 100%,26% 100%);
+}
+.jacket-left,.jacket-right{
+  position:absolute;top:0;width:56%;height:90px;background:#1c365d;
+}
+.jacket-left{left:0;clip-path:polygon(0 0,100% 0,60% 100%,0 100%)}
+.jacket-right{right:0;clip-path:polygon(0 0,100% 0,100% 100%,40% 100%)}
+.badge-pin{
+  position:absolute;right:23px;top:43px;
+  width:26px;height:18px;border-radius:4px;
+  color:white;background:#c91e3a;
+  font-size:8px;font-weight:950;
+  display:grid;place-items:center;
+}
+.shirt-fold{
+  position:absolute;left:50%;top:8px;bottom:10px;width:2px;background:rgba(255,255,255,.25)
+}
+.neck{
+  position:absolute;
+  left:73px;
+  bottom:119px;
+  width:35px;
+  height:42px;
+  background:#d69d79;
+  border-radius:10px;
+}
+.head{
+  position:absolute;
+  left:45px;
+  bottom:145px;
+  width:90px;
+  height:105px;
+  border-radius:45% 45% 48% 48%;
+  background:#e8b28d;
+  box-shadow:inset 0 -8px 0 rgba(166,102,70,.08);
+}
+.face{position:absolute;inset:0}
+.hair{
+  position:absolute;
+  left:-3px;right:-3px;top:-8px;
+  height:43px;
+  background:#50372f;
+  border-radius:55px 55px 22px 20px;
+  z-index:2;
+}
+.consul-hair:after{
+  content:"";
+  position:absolute;
+  right:-10px;top:15px;
+  width:30px;height:73px;
+  border-radius:10px 28px 30px 20px;
+  background:#50372f;
+  z-index:-1;
+}
+.applicant-hair{background:#2e2a28}
+.applicant-hair:before{
+  content:"";
+  position:absolute;
+  left:12px;top:2px;
+  width:42px;height:16px;
+  border-radius:50%;
+  background:#211e1d;
+  transform:rotate(-12deg);
+}
+.applicant-character.female .applicant-hair{
+  height:51px;
+  border-radius:55px 55px 28px 28px;
+}
+.applicant-character.female .applicant-hair:after{
+  content:"";
+  position:absolute;
+  left:-8px;right:-8px;top:20px;
+  height:90px;
+  border-radius:28px;
+  background:#3b2c28;
+  z-index:-1;
+}
+.ear{
+  position:absolute;
+  top:45px;
+  width:14px;height:22px;
+  background:#dc9f7a;
+  border-radius:50%;
+}
+.left-ear{left:-7px}.right-ear{right:-7px}
+.eye{
+  position:absolute;
+  top:47px;
+  width:11px;height:6px;
+  background:#263445;
+  border-radius:50%;
+  animation:blink 4.8s infinite;
+}
+.left-eye{left:23px}.right-eye{right:23px}
+.face-brow{
+  position:absolute;
+  top:37px;
+  width:17px;height:3px;
+  background:#65453a;
+  border-radius:4px;
+}
+.left-brow{left:18px;transform:rotate(-4deg)}
+.right-brow{right:18px;transform:rotate(4deg)}
+.nose{
+  position:absolute;
+  left:43px;top:51px;
+  width:5px;height:15px;
+  border-right:2px solid rgba(96,57,45,.45);
+  border-radius:50%;
+}
+.mouth{
+  position:absolute;
+  left:36px;top:75px;
+  width:20px;height:7px;
+  border-bottom:3px solid #8f4c48;
+  border-radius:0 0 20px 20px;
+  transition:.25s;
+}
+.nameplate{
+  position:absolute;
+  left:21px;right:21px;bottom:-28px;
+  text-align:center;
+  font-size:9px;
+  letter-spacing:.11em;
+  font-weight:950;
+  color:#183c68;
+  background:rgba(255,255,255,.72);
+  border:1px solid rgba(255,255,255,.86);
+  padding:7px 5px;
+  border-radius:999px;
+}
+.nervous-drop{
+  position:absolute;
+  right:38px;
+  top:25px;
+  opacity:0;
+  transform:translateY(-8px);
+}
+.applicant-character.thinking .nervous-drop{
+  opacity:1;
+  animation:drop 1.1s ease infinite;
+}
+
+.glass-panel{
+  position:absolute;
+  z-index:12;
+  left:49.5%;
+  top:0;
+  bottom:95px;
+  width:6px;
+  background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,.75),rgba(255,255,255,.12));
+  box-shadow:0 0 22px rgba(255,255,255,.38);
+}
+.glass-line{
+  position:absolute;
+  left:-135px;
+  width:275px;
+  height:2px;
+  background:rgba(255,255,255,.32);
+  transform:rotate(-32deg);
+}
+.glass-line.one{top:160px}.glass-line.two{top:255px}
+.speaker-hole{
+  position:absolute;
+  left:-18px;
+  top:59%;
+  width:42px;height:42px;
+  border-radius:50%;
+  border:4px dotted rgba(37,75,116,.42);
+}
+
+.desk{
+  position:absolute;
+  z-index:16;
+  left:0;right:0;bottom:0;
+  height:123px;
+}
+.desk-top{
+  height:22px;
+  background:linear-gradient(#a87248,#704524);
+  border-top:5px solid #bf8a5c;
+  box-shadow:0 -7px 18px rgba(7,26,57,.16);
+}
+.desk-front{
+  height:101px;
+  background:linear-gradient(180deg,#704524,#54331f);
+  position:relative;
+}
+.document-stack{
+  position:absolute;left:33%;top:-15px;width:82px;height:25px;
+}
+.document-stack span{
+  display:block;height:7px;background:#f8fafc;border:1px solid #d5dce6;border-radius:3px;margin-top:-3px;
+}
+.passport{
+  position:absolute;right:29%;top:-16px;
+  width:55px;height:37px;
+  display:grid;place-items:center;
+  color:#e6c97c;background:#143467;
+  border-radius:4px;
+  font-size:6px;font-weight:900;letter-spacing:.07em;
+  transform:rotate(7deg);
+}
+.keyboard{
+  position:absolute;left:20%;top:-13px;
+  width:86px;height:23px;
+  background:repeating-linear-gradient(90deg,#2e3948 0 7px,#465466 7px 9px);
+  border:3px solid #273241;
+  border-radius:5px;
+  transform:perspective(100px) rotateX(20deg);
+}
+
+.consul-character.approving .mouth{
+  width:25px;left:33px;height:11px;border-bottom-width:4px;
+}
+.consul-character.concerned .mouth{
+  top:80px;
+  border-bottom:0;
+  border-top:3px solid #8f4c48;
+  border-radius:20px 20px 0 0;
+}
+.consul-character.concerned .left-brow{transform:rotate(12deg)}
+.consul-character.concerned .right-brow{transform:rotate(-12deg)}
+.consul-character.neutral .mouth{width:18px;left:37px;border-radius:0}
+
+.answer-panel{
+  margin-top:18px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:24px;
+  background:#fbfdff;
+}
+.answer-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+}
+.answer-heading h2{margin:0 0 16px;font-size:27px}
+.answers-grid{display:grid;gap:11px}
+.answer-choice{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:white;
+  padding:15px 17px;
+  display:flex;
+  align-items:flex-start;
+  gap:13px;
+  color:var(--ink);
+  text-align:left;
+  font-weight:800;
+  line-height:1.45;
+  transition:.18s;
+}
+.answer-choice:hover{
+  transform:translateY(-2px);
+  border-color:#a9c3e7;
+  box-shadow:0 9px 22px rgba(20,95,194,.1);
+}
+.answer-choice .answer-letter{
+  flex:0 0 29px;
+  width:29px;height:29px;
+  border-radius:9px;
+  display:grid;place-items:center;
+  color:var(--blue);
+  background:var(--blue-soft);
+  font-size:12px;
+  font-weight:950;
+}
+.answer-choice.selected{
+  border-color:var(--blue);
+  background:#edf5ff;
+  box-shadow:0 0 0 3px rgba(23,105,210,.08);
+}
+.answer-choice:disabled{cursor:default}
+.answer-choice:not(.selected):disabled{opacity:.56}
+.reaction-badge{
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:12px;
+  font-weight:950;
+  animation:pop .25s ease both;
+}
+.reaction-badge.strong{color:var(--green);background:#e5f6ed}
+.reaction-badge.medium{color:var(--orange);background:#fff2df}
+.reaction-badge.risky{color:#a3172e;background:#ffe9ed}
+.game-actions{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:19px;
+}
+
+.result-screen{padding:38px}
+.result-hero{
+  display:grid;
+  grid-template-columns:190px 1fr;
+  align-items:center;
+  gap:30px;
+}
+.score-circle{
+  --score:0%;
+  width:180px;height:180px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  background:conic-gradient(var(--blue) var(--score),#e3eaf3 0);
+  position:relative;
+  animation:pop .55s ease both;
+}
+.score-circle:before{
+  content:"";
+  position:absolute;
+  inset:14px;
+  background:white;
+  border-radius:50%;
+}
+.score-circle>div{position:relative;text-align:center}
+.score-circle strong{font-size:48px}
+.score-circle span{display:block;color:var(--muted);font-weight:800}
+.result-hero h1{font-size:40px;margin:0 0 12px}
+.result-hero p{color:var(--muted);font-size:17px;line-height:1.6}
+.result-badge{
+  display:inline-flex;
+  padding:9px 13px;
+  border-radius:999px;
+  font-weight:950;
+}
+.result-badge.high{color:var(--green);background:#e5f6ed}
+.result-badge.mid{color:var(--orange);background:#fff1dd}
+.result-badge.low{color:#a3172e;background:#ffe9ed}
+
+.category-results{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:12px;
+  margin:30px 0 18px;
+}
+.category-card{
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+  background:#f8fbff;
+}
+.category-card span{display:block;color:var(--muted);font-size:11px;margin-bottom:7px}
+.category-card strong{font-size:23px;color:#173e79}
+.category-bar{
+  height:7px;
+  margin-top:10px;
+  border-radius:999px;
+  background:#e1e9f3;
+  overflow:hidden;
+}
+.category-bar i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,var(--blue),var(--red));
+}
+.result-columns{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.result-panel{
+  border:1px solid var(--line);
+  border-radius:21px;
+  padding:21px;
+  background:#fbfdff;
+}
+.result-panel h2{font-size:20px;margin-bottom:14px}
+.result-panel ul{padding-left:19px;margin:0}
+.result-panel li{margin:10px 0;line-height:1.5}
+.tips-panel{margin-top:16px}
+.tips-panel p{margin:0;color:#42516a;line-height:1.65}
+.simulation-warning{
+  margin-top:16px;
+  padding:16px;
+  border-radius:17px;
+  color:#6d5600;
+  background:#fff7dc;
+  border:1px solid #efd58b;
+  line-height:1.55;
+  font-size:13px;
+}
+.result-actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:22px;
+}
+.link-button{display:inline-flex}
+
+@keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes bubbleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes float{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(3deg) translateY(-5px)}}
+@keyframes blink{0%,45%,48%,100%{transform:scaleY(1)}46%,47%{transform:scaleY(.1)}}
+@keyframes dotPulse{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+@keyframes shine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@keyframes flagWave{0%,100%{transform:skewY(0)}50%{transform:skewY(3deg)}}
+@keyframes pop{0%{transform:scale(.94)}65%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes drop{0%{transform:translateY(-6px);opacity:0}40%{opacity:1}100%{transform:translateY(8px);opacity:0}}
+@media(max-width:900px){
+  .welcome-card{grid-template-columns:1fr}
+  .welcome-copy{padding:38px}
+  .welcome-scene{min-height:420px}
+  .category-results{grid-template-columns:repeat(2,1fr)}
+  .speech-bubble{left:15%;width:70%;top:17%}
+  .consul-character{left:7%}
+  .applicant-character{right:5%}
+}
+@media(max-width:680px){
+  .topbar{padding:16px}
+  .brand small{display:none}
+  .home-link{padding:10px 12px}
+  .game-shell{padding:0 10px;margin-top:6px}
+  .welcome-copy{padding:27px 22px}
+  .welcome-copy h1{font-size:35px}
+  .welcome-copy>p{font-size:16px}
+  .welcome-scene{padding:18px;min-height:360px}
+  .mini-window{max-width:280px}
+  .game-screen{padding:12px;border-radius:22px}
+  .game-status{gap:7px}
+  .status-item{padding:9px}
+  .status-item strong{font-size:15px}
+  .consulate-room{min-height:425px}
+  .room-sign{top:3%;font-size:9px}
+  .seal{width:55px;height:55px;left:4%;top:5%;font-size:20px}
+  .seal span{font-size:8px;bottom:8px}
+  .flag-pole{right:3%;top:5%;transform:scale(.75);transform-origin:top right}
+  .speech-bubble{top:15%;left:8%;width:84%;padding:13px 15px;min-height:95px}
+  .speech-bubble p{font-size:17px}
+  .character{transform:scale(.72);transform-origin:bottom center;bottom:85px}
+  .character{animation:none}
+  .consul-character{left:-3%}
+  .applicant-character{right:-2%}
+  .glass-panel{bottom:79px}
+  .desk{height:95px}
+  .desk-front{height:73px}
+  .answer-panel{padding:17px 13px}
+  .answer-heading h2{font-size:22px}
+  .answer-heading{display:block}
+  .reaction-badge{display:inline-flex;margin-bottom:12px}
+  .answer-choice{padding:13px 12px;font-size:14px}
+  .game-actions{flex-direction:column-reverse}
+  .game-actions>*{width:100%}
+  .result-screen{padding:25px 17px}
+  .result-hero{grid-template-columns:1fr;text-align:center}
+  .score-circle{margin:auto}
+  .result-hero h1{font-size:31px}
+  .category-results{grid-template-columns:1fr 1fr}
+  .result-columns{grid-template-columns:1fr}
+}
+@media(max-width:390px){
+  .gender-picker{flex-direction:column}
+  .category-results{grid-template-columns:1fr}
+  .character{transform:scale(.63)}
+  .consul-character{left:-8%}
+  .applicant-character{right:-7%}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}
+}
+
+</style>
+</head>
+<body>
+  <div class="page-bg" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="მთავარ გვერდზე დაბრუნება">
+      <span class="brand-flag">🇺🇸</span>
+      <span>
+        <strong>USA VISA HELP</strong>
+        <small>ინტერვიუს სავარჯიშო სიმულაცია</small>
+      </span>
+    </a>
+    <a class="home-link" href="./">← მთავარი</a>
+  </header>
+
+  <main class="game-shell">
+    <section id="welcomeScreen" class="welcome-card">
+      <div class="welcome-copy">
+        <span class="eyebrow">VIRTUAL CONSUL • B1/B2</span>
+        <h1>გაიარე საკონსულოს ინტერვიუს სიმულაცია</h1>
+        <p>
+          კონსული დაგისვამს 10 შეკითხვას. თითოეულ კითხვაზე აირჩიე 5 სავარაუდო პასუხიდან ერთი
+          და ბოლოს მიიღე მომზადების შეფასება.
+        </p>
+
+        <div class="mode-note">
+          <span>🎯</span>
+          <div>
+            <strong>მთავარი წესი</strong>
+            <p>აირჩიე ის პასუხი, რომელიც ყველაზე მეტად ჰგავს შენს რეალურ მდგომარეობას.</p>
+          </div>
+        </div>
+
+        <fieldset class="gender-picker">
+          <legend>აირჩიე აპლიკანტი</legend>
+          <label class="gender-option selected">
+            <input type="radio" name="applicantGender" value="male" checked />
+            <span class="gender-icon">👨</span>
+            <span>კაცი</span>
+          </label>
+          <label class="gender-option">
+            <input type="radio" name="applicantGender" value="female" />
+            <span class="gender-icon">👩</span>
+            <span>ქალი</span>
+          </label>
+        </fieldset>
+
+        <button id="startBtn" class="primary-btn" type="button">ინტერვიუს დაწყება</button>
+        <p class="legal-note">
+          ეს არის საგანმანათლებლო სიმულაცია და არ წარმოადგენს აშშ-ის საელჩოს ან საკონსულოს ოფიციალურ შეფასებას.
+        </p>
+      </div>
+
+      <div class="welcome-scene" aria-hidden="true">
+        <div class="mini-window">
+          <div class="mini-flag">🇺🇸</div>
+          <div class="mini-desk"></div>
+          <div class="mini-person consul-mini">👩‍💼</div>
+          <div class="mini-person applicant-mini">🧑</div>
+          <div class="mini-bubble">რატომ მიდიხართ ამერიკაში?</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="game-screen hidden" aria-label="ინტერვიუს თამაში">
+      <div class="game-status">
+        <div class="status-item">
+          <span>კითხვა</span>
+          <strong id="questionCounter">1/10</strong>
+        </div>
+        <div class="status-item">
+          <span>დრო</span>
+          <strong id="timerValue">00:00</strong>
+        </div>
+        <div class="status-item">
+          <span>პასუხები</span>
+          <strong id="answeredCounter">0</strong>
+        </div>
+      </div>
+
+      <div class="progress-track" aria-label="ინტერვიუს პროგრესი">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+
+      <section class="consulate-room" aria-label="საკონსულოს ოთახის ანიმაციური სცენა">
+        <div class="wall-details" aria-hidden="true">
+          <div class="seal">★<span>U.S.</span></div>
+          <div class="flag-pole">
+            <div class="us-flag-css">
+              <span class="flag-canton">✦ ✦<br>✦ ✦</span>
+            </div>
+          </div>
+          <div class="room-sign">NONIMMIGRANT VISAS</div>
+        </div>
+
+        <div class="speech-bubble" id="speechBubble">
+          <span class="speaker-label">საკონსულოს ოფიცერი</span>
+          <p id="questionText" aria-live="polite"></p>
+          <span class="typing-dots" id="typingDots" aria-hidden="true"><i></i><i></i><i></i></span>
+        </div>
+
+        <div class="interview-stage">
+          <div class="character consul-character" id="consulCharacter" aria-label="საკონსულოს ოფიცერი">
+            <div class="character-shadow"></div>
+            <div class="torso suit">
+              <div class="shirt"></div>
+              <div class="jacket-left"></div>
+              <div class="jacket-right"></div>
+              <div class="badge-pin">US</div>
+            </div>
+            <div class="neck"></div>
+            <div class="head">
+              <div class="hair consul-hair"></div>
+              <div class="ear left-ear"></div>
+              <div class="ear right-ear"></div>
+              <div class="face">
+                <span class="face-brow left-brow"></span>
+                <span class="face-brow right-brow"></span>
+                <span class="eye left-eye"></span>
+                <span class="eye right-eye"></span>
+                <span class="nose"></span>
+                <span class="mouth"></span>
+              </div>
+            </div>
+            <div class="nameplate">CONSULAR OFFICER</div>
+          </div>
+
+          <div class="glass-panel" aria-hidden="true">
+            <span class="glass-line one"></span>
+            <span class="glass-line two"></span>
+            <span class="speaker-hole"></span>
+          </div>
+
+          <div class="character applicant-character" id="applicantCharacter" aria-label="აპლიკანტი">
+            <div class="character-shadow"></div>
+            <div class="torso applicant-shirt">
+              <div class="shirt-fold"></div>
+            </div>
+            <div class="neck"></div>
+            <div class="head">
+              <div class="hair applicant-hair"></div>
+              <div class="ear left-ear"></div>
+              <div class="ear right-ear"></div>
+              <div class="face">
+                <span class="face-brow left-brow"></span>
+                <span class="face-brow right-brow"></span>
+                <span class="eye left-eye"></span>
+                <span class="eye right-eye"></span>
+                <span class="nose"></span>
+                <span class="mouth"></span>
+              </div>
+            </div>
+            <div class="nervous-drop">💧</div>
+            <div class="nameplate">APPLICANT</div>
+          </div>
+
+          <div class="desk" aria-hidden="true">
+            <div class="desk-top"></div>
+            <div class="desk-front">
+              <div class="document-stack">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="passport">PASSPORT</div>
+              <div class="keyboard"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="answer-panel">
+        <div class="answer-heading">
+          <div>
+            <span class="eyebrow">აირჩიე პასუხი</span>
+            <h2>რას უპასუხებდით?</h2>
+          </div>
+          <span id="reactionBadge" class="reaction-badge hidden" aria-live="polite"></span>
+        </div>
+        <div id="answersList" class="answers-grid" role="group" aria-label="სავარაუდო პასუხები"></div>
+        <div class="game-actions">
+          <button id="exitBtn" class="secondary-btn" type="button">გასვლა</button>
+          <button id="nextQuestionBtn" class="primary-btn hidden" type="button">შემდეგი კითხვა</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="resultScreen" class="result-screen hidden" aria-live="polite">
+      <div class="result-hero">
+        <div class="score-circle" id="scoreCircle">
+          <div>
+            <strong id="finalScore">0</strong>
+            <span>/100</span>
+          </div>
+        </div>
+        <div>
+          <span class="eyebrow">INTERVIEW REPORT</span>
+          <h1 id="resultTitle">შედეგი</h1>
+          <p id="resultSummary"></p>
+          <span id="resultBadge" class="result-badge"></span>
+        </div>
+      </div>
+
+      <div class="category-results" id="categoryResults"></div>
+
+      <div class="result-columns">
+        <article class="result-panel">
+          <h2>✅ ძლიერი მიმართულებები</h2>
+          <ul id="strongPoints"></ul>
+        </article>
+        <article class="result-panel">
+          <h2>⚠️ გასაუმჯობესებელი მიმართულებები</h2>
+          <ul id="weakPoints"></ul>
+        </article>
+      </div>
+
+      <article class="result-panel tips-panel">
+        <h2>🎯 პრაქტიკული რეკომენდაცია</h2>
+        <p id="finalTip"></p>
+      </article>
+
+      <div class="simulation-warning">
+        <strong>მნიშვნელოვანი:</strong>
+        შედეგი აფასებს მხოლოდ ამ სავარჯიშოში არჩეული პასუხების სიცხადესა და თანმიმდევრულობას.
+        უძრავი ქონება, შემოსავალი ან ნებისმიერი სხვა ცალკეული ფაქტორი ვიზის მიღების გარანტიას არ იძლევა.
+        საბოლოო გადაწყვეტილებას იღებს მხოლოდ საკონსულოს ოფიცერი.
+      </div>
+
+      <div class="result-actions">
+        <button id="restartGameBtn" class="primary-btn" type="button">თავიდან გავლა</button>
+        <a class="secondary-btn link-button" href="./">მთავარ გვერდზე დაბრუნება</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+const interviewQuestions = [
+  {
+    question: "რატომ გსურთ ამერიკაში გამგზავრება?",
+    category: "purpose",
+    answers: [
+      { text: "ტურისტული მოგზაურობა მაქვს დაგეგმილი და მსურს ნიუ-იორკისა და ვაშინგტონის მონახულება.", score: 4 },
+      { text: "მეგობრის მონახულებაც მინდა და რამდენიმე ტურისტული ადგილის ნახვაც.", score: 3 },
+      { text: "უბრალოდ მაინტერესებს ამერიკა, კონკრეტული გეგმა ჯერ არ მაქვს.", score: 1 },
+      { text: "იქ ბევრი შესაძლებლობაა და შეიძლება გადავწყვიტო, რომ უფრო დიდხანს დავრჩე.", score: 0 },
+      { text: "ყველა მიდის და მეც მინდა წასვლა.", score: 1 }
+    ]
+  },
+  {
+    question: "რატომ აირჩიეთ სწორედ ამერიკა?",
+    category: "purpose",
+    answers: [
+      { text: "დიდი ხანია მაინტერესებს მისი ქალაქები, მუზეუმები და კულტურა; მოგზაურობა წინასწარ დავგეგმე.", score: 4 },
+      { text: "კონკრეტულ ღონისძიებაზე დასასწრებად მივდივარ და დარჩენილი დღეები ტურიზმს დავუთმე.", score: 4 },
+      { text: "მეგობრებმა მირჩიეს და ვფიქრობ, საინტერესო იქნება.", score: 2 },
+      { text: "არ ვიცი, უბრალოდ ამერიკა პოპულარული მიმართულებაა.", score: 1 },
+      { text: "იმიტომ, რომ იქ სამუშაოს პოვნა უფრო ადვილია.", score: 0 }
+    ]
+  },
+  {
+    question: "რისი ნახვა გსურთ ამერიკაში?",
+    category: "plan",
+    answers: [
+      { text: "ტაიმზ-სქვერი, თავისუფლების ქანდაკება, ცენტრალ-პარკი და ვაშინგტონის მთავარი მუზეუმები.", score: 4 },
+      { text: "შერჩეული მაქვს ნიუ-იორკი და მაიამი, თუმცა მარშრუტის ნაწილს ჯერ ვაზუსტებ.", score: 3 },
+      { text: "ძირითადად ნათესავთან ვიქნები და თავისუფალ დროს რამდენიმე ადგილს ვნახავ.", score: 3 },
+      { text: "ჯერ არ ვიცი, ადგილზე გადავწყვეტ.", score: 1 },
+      { text: "მნიშვნელობა არ აქვს, უბრალოდ ამერიკაში მოხვედრა მინდა.", score: 0 }
+    ]
+  },
+  {
+    question: "რამდენი ხნით აპირებთ ამერიკაში დარჩენას?",
+    category: "plan",
+    answers: [
+      { text: "10 დღით — დაბრუნების თარიღი და მოგზაურობის გეგმაც წინასწარ მაქვს განსაზღვრული.", score: 4 },
+      { text: "დაახლოებით ორი კვირით, რადგან შემდეგ სამსახურში უნდა დავბრუნდე.", score: 4 },
+      { text: "დაახლოებით ერთი თვით; ამ პერიოდისთვის რეალური გეგმა მაქვს.", score: 3 },
+      { text: "ზუსტად არ ვიცი, სიტუაციას ადგილზე შევხედავ.", score: 1 },
+      { text: "რამდენ ხანსაც დარჩენის უფლებას მომცემენ.", score: 0 }
+    ]
+  },
+  {
+    question: "ვინ აფინანსებს თქვენს მოგზაურობას?",
+    category: "finance",
+    answers: [
+      { text: "მე თვითონ ვაფინანსებ ჩემი რეგულარული შემოსავლითა და დანაზოგით.", score: 4 },
+      { text: "ნაწილს მე ვფარავ, ნაწილს — ოჯახის წევრი; ხარჯები წინასწარ გვაქვს გათვლილი.", score: 3 },
+      { text: "ოჯახის წევრი სრულად მიფინანსებს და ამის რეალური შესაძლებლობა აქვს.", score: 3 },
+      { text: "ამერიკაში მყოფი მეგობარი დამეხმარება, ზუსტი თანხა არ ვიცი.", score: 1 },
+      { text: "ჯერ საკმარისი თანხა არ მაქვს, მაგრამ გამგზავრებამდე მოვაგროვებ.", score: 0 }
+    ]
+  },
+  {
+    question: "რას საქმიანობთ საქართველოში?",
+    category: "ties",
+    answers: [
+      { text: "ოფიციალურად ვარ დასაქმებული და მიმდინარე სამსახურში რამდენიმე წელია ვმუშაობ.", score: 4 },
+      { text: "საკუთარი ბიზნესი/საქმიანობა მაქვს და ყოველდღიურად თავად ვმართავ.", score: 4 },
+      { text: "სტუდენტი ვარ და სწავლასთან ერთად ვმუშაობ.", score: 3 },
+      { text: "არაოფიციალურად და არასტაბილურად ვმუშაობ.", score: 1 },
+      { text: "ამჟამად კონკრეტული საქმიანობა არ მაქვს.", score: 1 }
+    ]
+  },
+  {
+    question: "როგორია თქვენი შემოსავალი?",
+    category: "finance",
+    answers: [
+      { text: "მაქვს რეგულარული შემოსავალი, რომელიც საკმარისია დაგეგმილი მოგზაურობის დასაფინანსებლად.", score: 4 },
+      { text: "შემოსავალი მაქვს როგორც ოფიციალური ჩარიცხვით, ისე დამატებითი საქმიანობიდან.", score: 3 },
+      { text: "შემოსავალი სეზონურია, თუმცა მოგზაურობისთვის დანაზოგი მაქვს.", score: 3 },
+      { text: "ძირითადად ოჯახის წევრი მეხმარება და საკუთარი შემოსავალი მცირე მაქვს.", score: 2 },
+      { text: "ამ ეტაპზე არც სტაბილური შემოსავალი და არც საკმარისი დანაზოგი არ მაქვს.", score: 0 }
+    ]
+  },
+  {
+    question: "გაქვთ უძრავი ქონება?",
+    category: "ties",
+    answers: [
+      { text: "დიახ, ჩემს სახელზე მაქვს უძრავი ქონება.", score: 4 },
+      { text: "ქონება თანასაკუთრებაში მაქვს ოჯახის წევრთან.", score: 3 },
+      { text: "ოჯახს აქვს ქონება, მაგრამ ის დედაჩემის სახელზეა.", score: 2 },
+      { text: "ოჯახის სხვა წევრის სახელზეა და პირადად მესაკუთრე არ ვარ.", score: 2 },
+      { text: "არ მაქვს უძრავი ქონება.", score: 2 }
+    ]
+  },
+  {
+    question: "გყავთ ოჯახის წევრი ამერიკაში?",
+    category: "consistency",
+    answers: [
+      { text: "არა, ამერიკაში ოჯახის წევრი არ მყავს.", score: 4 },
+      { text: "დიახ, მყავს და მის შესახებ ინფორმაცია განაცხადშიც ზუსტად მაქვს მითითებული.", score: 4 },
+      { text: "დიახ, დროებით მოვინახულებ, თუმცა მოგზაურობის დამოუკიდებელი გეგმა მაქვს.", score: 3 },
+      { text: "მყავს, მაგრამ განაცხადში არ მიმითითებია, რადგან მნიშვნელოვნად არ მიმაჩნია.", score: 0 },
+      { text: "ზუსტად არ ვიცი მისი სტატუსი და ამ თემაზე საუბარი არ მსურს.", score: 1 }
+    ]
+  },
+  {
+    question: "რატომ დაბრუნდებით საქართველოში?",
+    category: "ties",
+    answers: [
+      { text: "საქართველოში მაქვს სამსახური, ოჯახური ვალდებულებები და კონკრეტულ თარიღში უნდა დავბრუნდე.", score: 4 },
+      { text: "აქ ვმართავ ჩემს საქმიანობას/ბიზნესს და დაბრუნების შემდეგ დაგეგმილი ვალდებულებები მაქვს.", score: 4 },
+      { text: "სწავლას ვაგრძელებ და სასწავლო პერიოდის დაწყებამდე უნდა დავბრუნდე.", score: 4 },
+      { text: "უბრალოდ დაბრუნებას ვაპირებ, სხვა კონკრეტული მიზეზი არ მაქვს.", score: 1 },
+      { text: "ჯერ არ ვიცი; თუ კარგი შესაძლებლობა გამოჩნდა, შეიძლება დავრჩე.", score: 0 }
+    ]
+  }
+];
+
+const categoryMeta = {
+  purpose: { label: "მიზანი", icon: "🎯" },
+  plan: { label: "მოგზაურობის გეგმა", icon: "🗺️" },
+  finance: { label: "ფინანსები", icon: "💳" },
+  ties: { label: "დაბრუნების კავშირები", icon: "🏠" },
+  consistency: { label: "თანმიმდევრულობა", icon: "🧩" }
+};
+
+const welcomeScreen = document.getElementById("welcomeScreen");
+const gameScreen = document.getElementById("gameScreen");
+const resultScreen = document.getElementById("resultScreen");
+const startBtn = document.getElementById("startBtn");
+const exitBtn = document.getElementById("exitBtn");
+const nextQuestionBtn = document.getElementById("nextQuestionBtn");
+const restartGameBtn = document.getElementById("restartGameBtn");
+const questionCounter = document.getElementById("questionCounter");
+const answeredCounter = document.getElementById("answeredCounter");
+const progressFill = document.getElementById("progressFill");
+const questionText = document.getElementById("questionText");
+const typingDots = document.getElementById("typingDots");
+const answersList = document.getElementById("answersList");
+const reactionBadge = document.getElementById("reactionBadge");
+const consulCharacter = document.getElementById("consulCharacter");
+const applicantCharacter = document.getElementById("applicantCharacter");
+const timerValue = document.getElementById("timerValue");
+
+let currentQuestion = 0;
+let selectedAnswers = [];
+let timerSeconds = 0;
+let timerId = null;
+let typingId = null;
+let acceptingAnswer = false;
+
+document.querySelectorAll(".gender-option").forEach(option => {
+  option.addEventListener("click", () => {
+    document.querySelectorAll(".gender-option").forEach(x => x.classList.remove("selected"));
+    option.classList.add("selected");
+  });
+});
+
+startBtn.addEventListener("click", startGame);
+exitBtn.addEventListener("click", () => {
+  const shouldExit = window.confirm("გსურთ ინტერვიუს შეწყვეტა და მთავარ ეკრანზე დაბრუნება?");
+  if (shouldExit) resetToWelcome();
+});
+nextQuestionBtn.addEventListener("click", goNext);
+restartGameBtn.addEventListener("click", startGame);
+
+function startGame() {
+  const gender = document.querySelector('input[name="applicantGender"]:checked')?.value || "male";
+  applicantCharacter.classList.toggle("female", gender === "female");
+
+  currentQuestion = 0;
+  selectedAnswers = [];
+  timerSeconds = 0;
+  clearInterval(timerId);
+  clearInterval(typingId);
+  timerValue.textContent = "00:00";
+
+  welcomeScreen.classList.add("hidden");
+  resultScreen.classList.add("hidden");
+  gameScreen.classList.remove("hidden");
+  timerId = setInterval(updateTimer, 1000);
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderQuestion() {
+  acceptingAnswer = false;
+  const item = interviewQuestions[currentQuestion];
+
+  questionCounter.textContent = `${currentQuestion + 1}/${interviewQuestions.length}`;
+  answeredCounter.textContent = selectedAnswers.length;
+  progressFill.style.width = `${((currentQuestion + 1) / interviewQuestions.length) * 100}%`;
+  answersList.innerHTML = "";
+  reactionBadge.className = "reaction-badge hidden";
+  reactionBadge.textContent = "";
+  nextQuestionBtn.classList.add("hidden");
+
+  consulCharacter.classList.remove("approving", "neutral", "concerned");
+  applicantCharacter.classList.add("thinking");
+
+  item.answers.forEach((answer, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer-choice";
+    button.innerHTML = `
+      <span class="answer-letter">${String.fromCharCode(65 + index)}</span>
+      <span>${escapeHtml(answer.text)}</span>
+    `;
+    button.addEventListener("click", () => chooseAnswer(index, button));
+    answersList.appendChild(button);
+  });
+
+  typeQuestion(item.question);
+}
+
+function typeQuestion(text) {
+  clearInterval(typingId);
+  questionText.textContent = "";
+  typingDots.classList.add("show");
+  let position = 0;
+
+  setTimeout(() => {
+    typingDots.classList.remove("show");
+    typingId = setInterval(() => {
+      questionText.textContent += text[position] || "";
+      position += 1;
+      if (position >= text.length) {
+        clearInterval(typingId);
+        acceptingAnswer = true;
+      }
+    }, 23);
+  }, 450);
+}
+
+function chooseAnswer(answerIndex, selectedButton) {
+  if (!acceptingAnswer) return;
+  acceptingAnswer = false;
+
+  const question = interviewQuestions[currentQuestion];
+  const answer = question.answers[answerIndex];
+  selectedAnswers.push({
+    question: question.question,
+    category: question.category,
+    score: answer.score,
+    text: answer.text
+  });
+
+  document.querySelectorAll(".answer-choice").forEach(button => {
+    button.disabled = true;
+  });
+  selectedButton.classList.add("selected");
+  applicantCharacter.classList.remove("thinking");
+
+  const reaction = getReaction(answer.score);
+  reactionBadge.textContent = reaction.label;
+  reactionBadge.className = `reaction-badge ${reaction.className}`;
+  consulCharacter.classList.add(reaction.characterClass);
+
+  nextQuestionBtn.textContent =
+    currentQuestion === interviewQuestions.length - 1 ? "შედეგის ნახვა" : "შემდეგი კითხვა";
+  nextQuestionBtn.classList.remove("hidden");
+  answeredCounter.textContent = selectedAnswers.length;
+}
+
+function getReaction(score) {
+  if (score >= 4) {
+    return { label: "კონკრეტული პასუხი", className: "strong", characterClass: "approving" };
+  }
+  if (score >= 2) {
+    return { label: "შეიძლება დაზუსტება დაგისვან", className: "medium", characterClass: "neutral" };
+  }
+  return { label: "რისკის შემცველი პასუხი", className: "risky", characterClass: "concerned" };
+}
+
+function goNext() {
+  if (selectedAnswers.length !== currentQuestion + 1) return;
+  if (currentQuestion < interviewQuestions.length - 1) {
+    currentQuestion += 1;
+    renderQuestion();
+    gameScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  clearInterval(timerId);
+  clearInterval(typingId);
+  gameScreen.classList.add("hidden");
+  resultScreen.classList.remove("hidden");
+
+  const rawScore = selectedAnswers.reduce((sum, item) => sum + item.score, 0);
+  const maxScore = interviewQuestions.length * 4;
+  const finalScore = Math.round((rawScore / maxScore) * 100);
+
+  const categoryScores = {};
+  Object.keys(categoryMeta).forEach(key => {
+    const items = selectedAnswers.filter(item => item.category === key);
+    const earned = items.reduce((sum, item) => sum + item.score, 0);
+    categoryScores[key] = items.length ? Math.round((earned / (items.length * 4)) * 100) : 0;
+  });
+
+  animateScore(finalScore);
+  renderCategoryResults(categoryScores);
+  renderFeedback(finalScore, categoryScores);
+  resultScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function animateScore(target) {
+  const number = document.getElementById("finalScore");
+  const circle = document.getElementById("scoreCircle");
+  let value = 0;
+  const increment = Math.max(1, Math.ceil(target / 40));
+  const id = setInterval(() => {
+    value = Math.min(target, value + increment);
+    number.textContent = value;
+    circle.style.setProperty("--score", `${value}%`);
+    if (value >= target) clearInterval(id);
+  }, 22);
+}
+
+function renderCategoryResults(scores) {
+  const container = document.getElementById("categoryResults");
+  container.innerHTML = Object.entries(categoryMeta).map(([key, meta]) => `
+    <div class="category-card">
+      <span>${meta.icon} ${meta.label}</span>
+      <strong>${scores[key]}%</strong>
+      <div class="category-bar"><i style="width:${scores[key]}%"></i></div>
+    </div>
+  `).join("");
+}
+
+function renderFeedback(score, categoryScores) {
+  const title = document.getElementById("resultTitle");
+  const summary = document.getElementById("resultSummary");
+  const badge = document.getElementById("resultBadge");
+  const strongPoints = document.getElementById("strongPoints");
+  const weakPoints = document.getElementById("weakPoints");
+  const finalTip = document.getElementById("finalTip");
+
+  if (score >= 80) {
+    title.textContent = "ძლიერი მომზადება";
+    summary.textContent = "არჩეული პასუხების უმეტესობა კონკრეტული, რეალისტური და ერთმანეთთან თანმიმდევრული იყო.";
+    badge.textContent = "კარგად მომზადებული პასუხები";
+    badge.className = "result-badge high";
+  } else if (score >= 55) {
+    title.textContent = "საშუალო მომზადება";
+    summary.textContent = "რამდენიმე პასუხი დამაჯერებელია, თუმცა ზოგიერთ თემაზე მეტი კონკრეტიკა და თანმიმდევრულობაა საჭირო.";
+    badge.textContent = "დამატებითი ვარჯიში სასარგებლოა";
+    badge.className = "result-badge mid";
+  } else {
+    title.textContent = "მეტი მომზადებაა საჭირო";
+    summary.textContent = "არჩეულ პასუხებში გამოჩნდა ბუნდოვანება ან ისეთი ფორმულირებები, რომლებმაც დამატებითი კითხვები შეიძლება გამოიწვიოს.";
+    badge.textContent = "მაღალი სავარჯიშო რისკი";
+    badge.className = "result-badge low";
+  }
+
+  const ordered = Object.entries(categoryScores).sort((a, b) => b[1] - a[1]);
+  const strong = ordered.filter(([, value]) => value >= 70).slice(0, 3);
+  const weak = [...ordered].reverse().filter(([, value]) => value < 70).slice(0, 3);
+
+  strongPoints.innerHTML = strong.length
+    ? strong.map(([key, value]) => `<li><strong>${categoryMeta[key].label}</strong> — ${value}%</li>`).join("")
+    : "<li>ჯერ არც ერთი მიმართულება არ გამოიკვეთა ძლიერ მხარედ.</li>";
+
+  weakPoints.innerHTML = weak.length
+    ? weak.map(([key, value]) => `<li><strong>${categoryMeta[key].label}</strong> — ${value}%</li>`).join("")
+    : "<li>მნიშვნელოვანი სუსტი მიმართულება არ გამოვლენილა.</li>";
+
+  const lowest = ordered[ordered.length - 1];
+  const tips = {
+    purpose: "მოგზაურობის მიზანი ჩამოაყალიბეთ მოკლედ და კონკრეტულად: რატომ მიდიხართ, რა უნდა ნახოთ და რატომ შეესაბამება ეს თქვენს რეალურ გეგმას.",
+    plan: "წინასწარ იცოდეთ მოგზაურობის სავარაუდო ვადა, ქალაქები, განთავსება და დაბრუნების თარიღი. დაზეპირებული პასუხი არ გამოიყენოთ.",
+    finance: "ფინანსურ კითხვებზე რეალურად ახსენით ვინ ფარავს ხარჯებს და როგორ შეესაბამება მოგზაურობის ღირებულება თქვენს შემოსავალსა და დანაზოგს.",
+    ties: "დაბრუნების მიზეზად დაასახელეთ თქვენი რეალური სამსახური, სწავლა, ბიზნესი, ოჯახური პასუხისმგებლობა ან სხვა კონკრეტული ვალდებულება.",
+    consistency: "ოჯახის წევრების, წინა ვიზებისა და მოგზაურობის შესახებ პასუხები ზუსტად უნდა ემთხვეოდეს DS-160-ში მითითებულ რეალურ ინფორმაციას."
+  };
+  finalTip.textContent = tips[lowest[0]];
+}
+
+function updateTimer() {
+  timerSeconds += 1;
+  const minutes = String(Math.floor(timerSeconds / 60)).padStart(2, "0");
+  const seconds = String(timerSeconds % 60).padStart(2, "0");
+  timerValue.textContent = `${minutes}:${seconds}`;
+}
+
+function resetToWelcome() {
+  clearInterval(timerId);
+  clearInterval(typingId);
+  gameScreen.classList.add("hidden");
+  resultScreen.classList.add("hidden");
+  welcomeScreen.classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[character]);
+}
+
+</script>
+</body>
+</html>
