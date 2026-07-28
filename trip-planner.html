@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>USA Trip Planner — დაგეგმე მოგზაურობა ამერიკაში</title>
+  <meta name="description" content="შექმენი ამერიკაში მოგზაურობის ყოველდღიური გეგმა ქალაქის, თარიღებისა და ინტერესების მიხედვით.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="trip-planner.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT7LM28WNS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-YT7LM28WNS", { anonymize_ip: true });
+  </script>
+</head>
+<body class="planner-page">
+  <div class="bg"></div>
+
+  <header class="topbar planner-topbar">
+    <a class="brand planner-brand" href="./index.html" aria-label="მთავარ გვერდზე დაბრუნება">
+      <div class="logo">🇺🇸</div>
+      <div>
+        <div class="brand-title">USA TRIP PLANNER</div>
+        <div class="brand-sub">შენი მოგზაურობა — დღეების მიხედვით</div>
+      </div>
+    </a>
+    <a class="ghost planner-home-link" href="./index.html">← მთავარი</a>
+  </header>
+
+  <main class="planner-shell">
+    <section class="planner-hero">
+      <div>
+        <span class="planner-kicker">PERSONALIZED USA ITINERARY</span>
+        <h1>დაგეგმე მოგზაურობა ამერიკაში</h1>
+        <p>
+          მიუთითე ქალაქი, მოგზაურობის სრული პერიოდი და მონიშნე იმდენი ინტერესი,
+          რამდენიც გსურს. გეგმა შეიქმნება ყოველი დღისთვის რამდენიმე აქტივობით.
+        </p>
+      </div>
+      <div class="planner-hero-badge" aria-hidden="true">
+        <span>🗽</span>
+        <b>USA</b>
+        <small>TRIP</small>
+      </div>
+    </section>
+
+    <section class="card planner-form-card" aria-labelledby="plannerFormTitle">
+      <div class="planner-section-heading">
+        <div>
+          <span class="eyebrow">ნაბიჯი 1</span>
+          <h2 id="plannerFormTitle">მოგზაურობის დეტალები</h2>
+        </div>
+        <span class="planner-no-limit">არჩევანის ლიმიტი არ არის</span>
+      </div>
+
+      <form id="plannerForm" novalidate>
+        <div class="planner-fields-grid">
+          <label class="planner-field">
+            <span>ქალაქი</span>
+            <select id="city" required>
+              <option value="new-york">New York City</option>
+              <option value="miami">Miami</option>
+              <option value="los-angeles">Los Angeles</option>
+              <option value="chicago">Chicago</option>
+              <option value="san-francisco">San Francisco</option>
+              <option value="las-vegas">Las Vegas</option>
+              <option value="washington-dc">Washington, D.C.</option>
+              <option value="boston">Boston</option>
+              <option value="orlando">Orlando</option>
+            </select>
+          </label>
+
+          <label class="planner-field">
+            <span>დაწყების თარიღი</span>
+            <input id="startDate" type="date" required>
+          </label>
+
+          <label class="planner-field">
+            <span>დასრულების თარიღი</span>
+            <input id="endDate" type="date" required>
+          </label>
+
+          <label class="planner-field">
+            <span>დღის ტემპი</span>
+            <select id="pace">
+              <option value="relaxed">მშვიდი — 2 აქტივობა</option>
+              <option value="balanced" selected>დაბალანსებული — 3 აქტივობა</option>
+              <option value="full">აქტიური — 4 აქტივობა</option>
+            </select>
+          </label>
+
+          <label class="planner-field">
+            <span>დღიური ბიუჯეტი</span>
+            <select id="budget">
+              <option value="low">ეკონომიური — $</option>
+              <option value="mid" selected>საშუალო — $$</option>
+              <option value="high">კომფორტული — $$$</option>
+            </select>
+          </label>
+        </div>
+
+        <fieldset class="interest-fieldset">
+          <legend>
+            რისი ნახვა გსურს?
+            <small>შეგიძლია მონიშნო რამდენიც გინდა</small>
+          </legend>
+          <div class="interest-grid">
+            <label class="interest-option"><input type="checkbox" name="interest" value="landmarks" checked><span>🗽 ღირსშესანიშნაობები</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="museums" checked><span>🏛️ მუზეუმები</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="food" checked><span>🍽️ კულინარია</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="music"><span>🎷 მუსიკა</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="parks"><span>🌳 პარკები</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="shopping"><span>🛍️ შოპინგი</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="sports"><span>⚾ სპორტი</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="nightlife"><span>🌙 ღამის ცხოვრება</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="family"><span>🎡 ოჯახთან ერთად</span></label>
+            <label class="interest-option"><input type="checkbox" name="interest" value="events"><span>🎟️ Live Events</span></label>
+          </div>
+        </fieldset>
+
+        <div id="plannerError" class="planner-error hidden" role="alert"></div>
+
+        <button class="planner-generate-button" type="submit">
+          <span aria-hidden="true">✨</span>
+          ჩემი გეგმის შექმნა
+        </button>
+      </form>
+    </section>
+
+    <section id="plannerResults" class="planner-results hidden" aria-live="polite">
+      <div class="card planner-summary-card">
+        <div>
+          <span class="eyebrow">შენი პერსონალური მარშრუტი</span>
+          <h2 id="summaryTitle"></h2>
+          <p id="summaryMeta"></p>
+        </div>
+        <div class="planner-result-actions">
+          <button id="copyPlan" class="secondary" type="button">გეგმის კოპირება</button>
+          <button id="printPlan" class="primary" type="button">PDF / ამობეჭდვა</button>
+        </div>
+      </div>
+
+      <div class="live-search-notice">
+        <span aria-hidden="true">🔎</span>
+        <div>
+          <b>Live Events-ის ძიება ინგლისურად მუშაობს</b>
+          <p>ყოველი დღის ბარათში მიიღებ მზა ინგლისურ საძიებო ბმულებს ქალაქისა და ზუსტი თარიღის მიხედვით.</p>
+        </div>
+      </div>
+
+      <div id="itinerary" class="itinerary"></div>
+
+      <div class="card planner-note">
+        <b>გაითვალისწინე:</b>
+        ღონისძიებების დრო, ფასი და ხელმისაწვდომობა შეიძლება შეიცვალოს. ბილეთის შეძენამდე გადაამოწმე ინფორმაცია ოფიციალურ გვერდზე.
+      </div>
+    </section>
+  </main>
+
+  <script src="trip-planner.js"></script>
+</body>
+</html>
