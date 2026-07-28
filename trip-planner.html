@@ -120,6 +120,33 @@
           </div>
         </fieldset>
 
+        <fieldset class="service-fieldset">
+          <legend>
+            ფრენა და სასტუმრო
+            <small>აირჩიე რომელი რეალური ძიება დაემატოს გეგმას</small>
+          </legend>
+          <div class="service-options">
+            <label class="service-option">
+              <input type="checkbox" name="service" value="flights" checked>
+              <span class="service-option-icon" aria-hidden="true">✈️</span>
+              <span>
+                <b>ფრენების შედარება</b>
+                <small>Google Flights — ქალაქისა და თარიღების მიხედვით</small>
+              </span>
+              <i aria-hidden="true">✓</i>
+            </label>
+            <label class="service-option">
+              <input type="checkbox" name="service" value="hotels" checked>
+              <span class="service-option-icon" aria-hidden="true">🏨</span>
+              <span>
+                <b>სასტუმროების ნახვა</b>
+                <small>Booking.com — შესვლისა და გასვლის თარიღებით</small>
+              </span>
+              <i aria-hidden="true">✓</i>
+            </label>
+          </div>
+        </fieldset>
+
         <div id="plannerError" class="planner-error hidden" role="alert"></div>
 
         <button class="planner-generate-button" type="submit">
@@ -145,16 +172,19 @@
       <div class="live-search-notice">
         <span aria-hidden="true">🔎</span>
         <div>
-          <b>Live Events-ის ძიება ინგლისურად მუშაობს</b>
-          <p>ყოველი დღის ბარათში მიიღებ მზა ინგლისურ საძიებო ბმულებს ქალაქისა და ზუსტი თარიღის მიხედვით.</p>
+          <b>LIVE SEARCH — რეალური ფრენები, სასტუმროები და ღონისძიებები</b>
+          <p>არჩეული ქალაქი და თარიღები ავტომატურად გადავა საძიებო გვერდებზე; Live Events ინგლისურად მოიძებნება.</p>
         </div>
       </div>
+
+      <div id="travelSearch" class="travel-search-grid"></div>
 
       <div id="itinerary" class="itinerary"></div>
 
       <div class="card planner-note">
-        <b>გაითვალისწინე:</b>
-        ღონისძიებების დრო, ფასი და ხელმისაწვდომობა შეიძლება შეიცვალოს. ბილეთის შეძენამდე გადაამოწმე ინფორმაცია ოფიციალურ გვერდზე.
+        <b>ფასს ამ გვერდზე არ ვიგონებთ.</b>
+        ფრენისა და სასტუმროს საბოლოო ფასი ყოველთვის გადაამოწმე ავიაკომპანიის,
+        გადამყიდველის ან სასტუმროს ოფიციალურ გვერდზე. ღონისძიებების დრო და ხელმისაწვდომობაც შეიძლება შეიცვალოს.
       </div>
     </section>
   </main>

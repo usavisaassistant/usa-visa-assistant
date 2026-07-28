@@ -243,16 +243,18 @@
 
     const dates = enumerateDates(startEl.value, endEl.value);
     const interests = [...document.querySelectorAll('input[name="interest"]:checked')].map(input => input.value);
+    const services = [...document.querySelectorAll('input[name="service"]:checked')].map(input => input.value);
 
     if (!startEl.value || !endEl.value) return showError("გთხოვ, მიუთითე დაწყებისა და დასრულების თარიღები.");
     if (dates.length === 0) return showError("დასრულების თარიღი დაწყების თარიღზე ადრე ვერ იქნება.");
     if (!interests.length) return showError("მონიშნე მინიმუმ ერთი სასურველი აქტივობა.");
+    if (!services.length) return showError("აირჩიე ფრენის ან სასტუმროს მინიმუმ ერთი რეალური ძიება.");
 
     const guide = CITY_GUIDES[cityEl.value];
     const perDay = { relaxed: 2, balanced: 3, full: 4 }[paceEl.value] || 3;
-    const plan = buildPlan(guide, dates, interests, perDay, budgetEl.value);
+    const plan = buildPlan(guide, dates, interests, services, perDay, budgetEl.value);
     lastPlan = plan;
-    saveForm(interests);
+    saveForm(interests, services);
     renderPlan(plan);
     track("trip_plan_generated", { city: guide.nameEn, days: dates.length, interests: interests.length });
   });
@@ -260,7 +262,7 @@
   document.getElementById("printPlan").addEventListener("click", () => window.print());
   document.getElementById("copyPlan").addEventListener("click", copyPlan);
 
-  function buildPlan(guide, dates, interests, perDay, budget) {
+  function buildPlan(guide, dates, interests, services, perDay, budget) {
     const budgetRank = { low: 1, mid: 2, high: 3 }[budget] || 2;
     let eligible = guide.activities.filter(item => interests.includes(item.category));
     if (eligible.length < perDay) eligible = [...guide.activities];
@@ -286,7 +288,7 @@
       return { date, zone: dominantZone(chosen, zone), activities: chosen };
     });
 
-    return { guide, dates, interests, perDay, budget, days };
+    return { guide, dates, interests, services, perDay, budget, days };
   }
 
   function renderPlan(plan) {
@@ -296,9 +298,51 @@
     document.getElementById("summaryMeta").textContent =
       `${first} – ${last} • ${plan.perDay} აქტივობა ყოველდღე • ${plan.interests.length} არჩეული ინტერესი`;
 
+    renderTravelSearch(plan);
     itineraryEl.innerHTML = plan.days.map((day, index) => renderDay(plan.guide, day, index, plan.perDay)).join("");
     resultsEl.classList.remove("hidden");
     resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderTravelSearch(plan) {
+    const box = document.getElementById("travelSearch");
+    const start = toUtcInputDate(plan.dates[0]);
+    const end = toUtcInputDate(plan.dates[plan.dates.length - 1]);
+    const dateRange = `${formatDateEn(plan.dates[0])} – ${formatDateEn(plan.dates[plan.dates.length - 1])}`;
+    const cards = [];
+
+    if (plan.services.includes("flights")) {
+      const query = `Flights to ${plan.guide.nameEn} ${formatDateEn(plan.dates[0])} to ${formatDateEn(plan.dates[plan.dates.length - 1])}`;
+      const href = `https://www.google.com/travel/flights?q=${encodeURIComponent(query)}&hl=ka`;
+      cards.push(`
+        <article class="travel-search-card">
+          <span class="travel-search-card-icon" aria-hidden="true">✈️</span>
+          <div class="travel-search-card-copy">
+            <small>LIVE SEARCH</small>
+            <h3>რეალური ფრენები</h3>
+            <p>${escapeHtml(plan.guide.nameEn)} • ${escapeHtml(dateRange)}</p>
+          </div>
+          <a class="travel-search-button" href="${href}" target="_blank" rel="noopener">Google Flights ↗</a>
+        </article>
+      `);
+    }
+
+    if (plan.services.includes("hotels")) {
+      const href = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(plan.guide.nameEn)}&checkin=${start}&checkout=${end}`;
+      cards.push(`
+        <article class="travel-search-card">
+          <span class="travel-search-card-icon" aria-hidden="true">🏨</span>
+          <div class="travel-search-card-copy">
+            <small>LIVE SEARCH</small>
+            <h3>რეალური სასტუმროები</h3>
+            <p>${escapeHtml(plan.guide.nameEn)} • ${escapeHtml(dateRange)}</p>
+          </div>
+          <a class="travel-search-button" href="${href}" target="_blank" rel="noopener">Booking.com ↗</a>
+        </article>
+      `);
+    }
+
+    box.innerHTML = cards.join("");
   }
 
   function renderDay(guide, day, index, perDay) {
@@ -402,6 +446,10 @@
     return local.toISOString().slice(0, 10);
   }
 
+  function toUtcInputDate(date) {
+    return date.toISOString().slice(0, 10);
+  }
+
   function rotate(items, offset) {
     if (!items.length) return [];
     const cut = offset % items.length;
@@ -446,13 +494,14 @@
     }
   }
 
-  function saveForm(interests) {
+  function saveForm(interests, services) {
     try {
       localStorage.setItem("usaTripPlannerPreferences", JSON.stringify({
         city: cityEl.value,
         pace: paceEl.value,
         budget: budgetEl.value,
-        interests
+        interests,
+        services
       }));
     } catch {}
   }
@@ -467,6 +516,11 @@
       if (Array.isArray(saved.interests)) {
         document.querySelectorAll('input[name="interest"]').forEach(input => {
           input.checked = saved.interests.includes(input.value);
+        });
+      }
+      if (Array.isArray(saved.services)) {
+        document.querySelectorAll('input[name="service"]').forEach(input => {
+          input.checked = saved.services.includes(input.value);
         });
       }
     } catch {}
