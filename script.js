@@ -23,6 +23,23 @@ try {
   console.warn("Firebase unavailable, local mode active", e);
 }
 
+async function recordPageVisit(){
+  if(!firebaseReady || !db) return;
+  const dayKey = new Date().toISOString().slice(0,10);
+  const storageKey = `usaVisaVisit:${dayKey}`;
+  if(localStorage.getItem(storageKey)) return;
+  try{
+    await db.collection("pageVisits").add({
+      createdAt:new Date().toISOString(),
+      path:location.pathname,
+      referrer:document.referrer||"direct",
+      userAgent:navigator.userAgent.slice(0,300)
+    });
+    localStorage.setItem(storageKey,"1");
+  }catch(e){ console.warn("Visit tracking failed",e); }
+}
+setTimeout(recordPageVisit, 800);
+
 const STORAGE_KEY = "usaVisaAdvisorV5Applicants";
 const app = document.getElementById("app");
 let step = 0;
@@ -578,6 +595,17 @@ function saveLocal(record){
 }
 function getApplicants(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch{return[];}}
 
+async function loadAdminData(){
+  const applicantSnap = await db.collection("applicants").orderBy("createdAt","desc").limit(500).get();
+  const applicants = applicantSnap.docs.map(d=>({id:d.id,...d.data()}));
+  let visits=[];
+  try{
+    const visitSnap=await db.collection("pageVisits").orderBy("createdAt","desc").limit(2000).get();
+    visits=visitSnap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){ console.warn("Visit data unavailable",e); }
+  return {applicants,visits};
+}
+
 async function renderAdmin(){
   if(!firebaseReady || !auth || !auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL){
     openAdminAccess();
@@ -585,62 +613,131 @@ async function renderAdmin(){
   }
   app.innerHTML=clone("adminTemplate");
   qs("#adminHomeBtn",app).onclick=renderHome;
-  qs("#adminLogoutBtn",app).onclick=async ()=>{
-    await auth.signOut();
-    renderHome();
-  };
-  let list=getApplicants();
-  if(firebaseReady && db){
-    try{
-      const snap=await db.collection("applicants").orderBy("createdAt","desc").limit(300).get();
-      list=snap.docs.map(d=>({id:d.id,...d.data()}));
-    }catch(e){console.warn("Admin online load failed",e); alert("Admin მონაცემების წაკითხვა ვერ მოხერხდა. გადაამოწმეთ Firebase Authentication და Firestore Rules.");}
-  }
-  window.__adminList=list;
-  renderStats(list);
+  qs("#adminLogoutBtn",app).onclick=async ()=>{ await auth.signOut(); renderHome(); };
   qs("#adminSearch",app).oninput=renderAdminList;
   qs("#scoreFilter",app).onchange=renderAdminList;
-  qs("#exportCsvBtn",app).onclick=()=>exportCsv(list);
-  renderAdminList();
+  qs("#statusFilter",app).onchange=renderAdminList;
+  qs("#refreshAdminBtn",app).onclick=refreshAdminData;
+  qs("#exportCsvBtn",app).onclick=()=>exportCsv(window.__adminList||[]);
+  qs("#adminList",app).innerHTML='<div class="loading-box">მონაცემები იტვირთება...</div>';
+  await refreshAdminData();
 }
 
-function renderStats(list){
-  const today=new Date().toDateString();
+async function refreshAdminData(){
+  const msg=qs("#adminMessage",app);
+  try{
+    msg.textContent="მონაცემები ახლდება...";
+    const data=await loadAdminData();
+    window.__adminList=data.applicants;
+    window.__visitList=data.visits;
+    renderStats(data.applicants,data.visits);
+    renderAdminList();
+    msg.textContent=`ბოლო განახლება: ${new Date().toLocaleTimeString()}`;
+  }catch(e){
+    console.error("Admin online load failed",e);
+    msg.textContent="მონაცემების წაკითხვა ვერ მოხერხდა. Firestore Rules გამოაქვეყნეთ და ხელახლა სცადეთ.";
+    qs("#adminList",app).innerHTML='<div class="loading-box">მონაცემები ვერ ჩაიტვირთა.</div>';
+  }
+}
+
+function renderStats(list,visits=[]){
+  const now=new Date();
+  const today=now.toDateString();
+  const month=now.getMonth(), year=now.getFullYear();
   const todayCount=list.filter(x=>new Date(x.createdAt||0).toDateString()===today).length;
-  const avg=list.length?Math.round(list.reduce((s,x)=>s+(x.score||0),0)/list.length):0;
-  const high=list.filter(x=>(x.score||0)>=80).length;
-  const refusal=list.filter(x=>x.refusalCount && x.refusalCount!=="0").length;
-  const stats=[["სულ განაცხადი",list.length],["დღეს",todayCount],["საშუალო ქულა",avg],["80+ შეფასება",high],["უარის ისტორია",refusal]];
+  const monthCount=list.filter(x=>{const d=new Date(x.createdAt||0);return d.getMonth()===month&&d.getFullYear()===year;}).length;
+  const todayVisits=visits.filter(x=>new Date(x.createdAt||0).toDateString()===today).length;
+  const avg=list.length?Math.round(list.reduce((sum,x)=>sum+(Number(x.score)||0),0)/list.length):0;
+  const newLeads=list.filter(x=>(x.adminStatus||"new")==="new").length;
+  const stats=[["სულ განაცხადი",list.length],["დღეს შევსებული",todayCount],["ამ თვეში",monthCount],["დღეს ვიზიტი",todayVisits],["ახალი ლიდი",newLeads],["საშუალო ქულა",avg]];
   qs("#statsGrid",app).innerHTML=stats.map(([l,v])=>`<div class="metric"><small>${l}</small><b>${v}</b></div>`).join("");
 }
 
+const STATUS_LABELS={new:"ახალი",contacted:"დაკავშირებული",processing:"მუშავდება",done:"დასრულებული"};
+const FIELD_LABELS=Object.fromEntries(sections.flatMap(s=>s.fields.map(f=>[f.id,f.label])));
+const SYSTEM_FIELDS=new Set(["id","adminStatus","adminNote","updatedAt"]);
+
 function renderAdminList(){
   const all=window.__adminList||[];
-  const q=(qs("#adminSearch",app)?.value||"").toLowerCase();
-  const filter=qs("#scoreFilter",app)?.value||"all";
-  let list=all.filter(r=>(r.fullName||"").toLowerCase().includes(q)||(r.phone||"").toLowerCase().includes(q));
-  if(filter==="high") list=list.filter(r=>(r.score||0)>=80);
-  if(filter==="mid") list=list.filter(r=>(r.score||0)>=50&&(r.score||0)<80);
-  if(filter==="low") list=list.filter(r=>(r.score||0)<50);
+  const q=(qs("#adminSearch",app)?.value||"").trim().toLowerCase();
+  const scoreFilter=qs("#scoreFilter",app)?.value||"all";
+  const statusFilter=qs("#statusFilter",app)?.value||"all";
+  let list=all.filter(r=>[r.fullName,r.phone,r.email].some(v=>String(v||"").toLowerCase().includes(q)));
+  if(scoreFilter==="high") list=list.filter(r=>(Number(r.score)||0)>=80);
+  if(scoreFilter==="mid") list=list.filter(r=>(Number(r.score)||0)>=50&&(Number(r.score)||0)<80);
+  if(scoreFilter==="low") list=list.filter(r=>(Number(r.score)||0)<50);
+  if(statusFilter!=="all") list=list.filter(r=>(r.adminStatus||"new")===statusFilter);
   const box=qs("#adminList",app);
-  if(!list.length){box.innerHTML=`<p class="muted">მონაცემები არ მოიძებნა.</p>`;return;}
-  box.innerHTML=list.map(r=>`<div class="applicant">
-    <div class="applicant-top"><div><b>${escapeHtml(r.fullName||"უსახელო")}</b><div class="muted">${r.createdAt?new Date(r.createdAt).toLocaleString():""}</div></div><div class="badge">${r.score||0}/100</div></div>
-    <div class="details">
-      <div class="detail">ტელეფონი<b>${escapeHtml(r.phone||"-")}</b></div>
-      <div class="detail">დასაქმება<b>${escapeHtml(r.employment||"-")}</b></div>
-      <div class="detail">სამუშაო წლები<b>${escapeHtml(r.jobYears||"-")}</b></div>
-      <div class="detail">ქვეყნები<b>${escapeHtml(r.countryCount||"-")}</b></div>
-      <div class="detail">აშშ-ში ოჯახის წევრი<b>${escapeHtml(r.usFamily||"-")}</b></div>
-      <div class="detail">უარი<b>${escapeHtml(r.refusalCount||"0")}</b></div>
-      <div class="detail">რისკი<b>${escapeHtml(r.riskLevel||"-")}</b></div>
-      <div class="detail">კონსულტაცია<b>${escapeHtml(r.helpNeeded||"-")}</b></div>
-    </div>
-    <div class="nav-row">
-      <a class="secondary link-btn" target="_blank" href="https://wa.me/${normalizePhone(r.phone)}">WhatsApp</a>
-      <a class="secondary link-btn" href="tel:${escapeHtml(r.phone||"")}">დარეკვა</a>
-    </div>
-  </div>`).join("");
+  if(!list.length){box.innerHTML='<p class="muted">მონაცემები არ მოიძებნა.</p>';return;}
+  box.innerHTML=list.map(r=>{
+    const status=r.adminStatus||"new";
+    return `<div class="applicant">
+      <div class="applicant-top"><div><b>${escapeHtml(r.fullName||"უსახელო")}</b><div class="muted">${formatDate(r.createdAt)} · ${escapeHtml(r.phone||"ტელეფონი არ არის")}</div></div><div><span class="status-pill status-${status}">${STATUS_LABELS[status]||status}</span> <span class="badge">${Number(r.score)||0}/100</span></div></div>
+      <div class="details">
+        <div class="detail">ელფოსტა<b>${escapeHtml(r.email||"-")}</b></div>
+        <div class="detail">დასაქმება<b>${displayValue(r.employment)}</b></div>
+        <div class="detail">ქვეყნები<b>${displayValue(r.countryCount)}</b></div>
+        <div class="detail">უარის ისტორია<b>${displayValue(r.refusalCount||"0")}</b></div>
+      </div>
+      ${r.adminNote?`<div class="muted" style="margin-top:10px"><b>შენიშვნა:</b> ${escapeHtml(r.adminNote)}</div>`:""}
+      <div class="applicant-actions">
+        <button class="primary" data-view-id="${r.id}">სრულად ნახვა</button>
+        <a class="secondary link-btn" target="_blank" href="https://wa.me/${normalizePhone(r.phone)}">WhatsApp</a>
+        <a class="secondary link-btn" href="tel:${escapeHtml(r.phone||"")}">დარეკვა</a>
+      </div>
+    </div>`;
+  }).join("");
+  qsa("[data-view-id]",box).forEach(btn=>btn.onclick=()=>openApplicant(btn.dataset.viewId));
+}
+
+function displayValue(value){
+  if(Array.isArray(value)) return escapeHtml(value.join(", "));
+  if(value===true||value==="yes") return "დიახ";
+  if(value===false||value==="no") return "არა";
+  return escapeHtml(value??"-");
+}
+function formatDate(value){ const d=new Date(value||0); return isNaN(d)?"":d.toLocaleString(); }
+
+function openApplicant(id){
+  const r=(window.__adminList||[]).find(x=>x.id===id); if(!r)return;
+  const modal=document.getElementById("applicantModal");
+  document.getElementById("applicantModalTitle").textContent=r.fullName||"აპლიკანტი";
+  const fields=Object.entries(r).filter(([k])=>!SYSTEM_FIELDS.has(k)).map(([k,v])=>`<div class="modal-field"><small>${escapeHtml(FIELD_LABELS[k]||k)}</small><b>${displayValue(v)}</b></div>`).join("");
+  document.getElementById("applicantModalBody").innerHTML=`
+    <div class="modal-grid">${fields}</div>
+    <div class="admin-edit">
+      <div class="field" style="margin:0"><label>სტატუსი</label><select id="modalStatus"><option value="new">ახალი</option><option value="contacted">დაკავშირებული</option><option value="processing">მუშავდება</option><option value="done">დასრულებული</option></select></div>
+      <div class="field" style="margin:0"><label>შენიშვნა</label><textarea id="modalNote" placeholder="ჩაწერეთ მოკლე შენიშვნა..."></textarea></div>
+      <div><button class="primary" id="saveApplicantBtn">შენახვა</button><button class="danger-small" id="deleteApplicantBtn" style="margin-top:8px">წაშლა</button></div>
+    </div>`;
+  document.getElementById("modalStatus").value=r.adminStatus||"new";
+  document.getElementById("modalNote").value=r.adminNote||"";
+  document.getElementById("saveApplicantBtn").onclick=()=>saveApplicantAdminFields(id);
+  document.getElementById("deleteApplicantBtn").onclick=()=>deleteApplicant(id);
+  modal.classList.remove("hidden");
+}
+
+document.getElementById("closeApplicantModal").onclick=()=>document.getElementById("applicantModal").classList.add("hidden");
+
+async function saveApplicantAdminFields(id){
+  const status=document.getElementById("modalStatus").value;
+  const note=document.getElementById("modalNote").value.trim();
+  try{
+    await db.collection("applicants").doc(id).update({adminStatus:status,adminNote:note,updatedAt:new Date().toISOString()});
+    const r=(window.__adminList||[]).find(x=>x.id===id); if(r){r.adminStatus=status;r.adminNote=note;}
+    document.getElementById("applicantModal").classList.add("hidden");
+    renderStats(window.__adminList||[],window.__visitList||[]); renderAdminList();
+  }catch(e){alert("შენახვა ვერ მოხერხდა. Firestore Rules გადაამოწმეთ.");}
+}
+
+async function deleteApplicant(id){
+  if(!confirm("ნამდვილად გსურთ ამ განაცხადის წაშლა?"))return;
+  try{
+    await db.collection("applicants").doc(id).delete();
+    window.__adminList=(window.__adminList||[]).filter(x=>x.id!==id);
+    document.getElementById("applicantModal").classList.add("hidden");
+    renderStats(window.__adminList||[],window.__visitList||[]); renderAdminList();
+  }catch(e){alert("წაშლა ვერ მოხერხდა.");}
 }
 
 function normalizePhone(p){return String(p||"").replace(/\D/g,"").replace(/^0/,"995");}
@@ -648,8 +745,8 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":
 function exportCsv(list){
   if(!list.length){alert("მონაცემები არ არის.");return;}
   const keys=[...new Set(list.flatMap(Object.keys))];
-  const csv=[keys.join(","),...list.map(r=>keys.map(k=>`"${String(r[k]??"").replaceAll('"','""')}"`).join(","))].join("\n");
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="visa-applicants-v5.csv";a.click();
+  const csv="\ufeff"+[keys.join(","),...list.map(r=>keys.map(k=>`"${String(r[k]??"").replaceAll('"','""')}"`).join(","))].join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`visa-applicants-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href);
 }
 
 renderHome();

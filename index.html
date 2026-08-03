@@ -316,19 +316,38 @@
       <div class="stats-grid" id="statsGrid"></div>
 
       <div class="admin-tools">
-        <input id="adminSearch" placeholder="ძებნა სახელით ან ტელეფონით">
+        <input id="adminSearch" placeholder="ძებნა სახელით, ტელეფონით ან ელფოსტით">
         <select id="scoreFilter">
           <option value="all">ყველა შეფასება</option>
           <option value="high">80+</option>
           <option value="mid">50-79</option>
           <option value="low">0-49</option>
         </select>
-        <button class="primary" id="exportCsvBtn">CSV Export</button>
+        <select id="statusFilter">
+          <option value="all">ყველა სტატუსი</option>
+          <option value="new">ახალი</option>
+          <option value="contacted">დაკავშირებული</option>
+          <option value="processing">მუშავდება</option>
+          <option value="done">დასრულებული</option>
+        </select>
+        <button class="primary" id="refreshAdminBtn">განახლება</button>
+        <button class="secondary" id="exportCsvBtn">CSV Export</button>
       </div>
 
+      <div id="adminMessage" class="muted"></div>
       <div id="adminList"></div>
     </section>
   </template>
+
+  <div class="modal hidden" id="applicantModal" role="dialog" aria-modal="true">
+    <div class="modal-card applicant-modal-card">
+      <div class="section-head">
+        <div><span class="eyebrow">აპლიკანტის დეტალები</span><h2 id="applicantModalTitle">აპლიკანტი</h2></div>
+        <button class="secondary" id="closeApplicantModal">დახურვა</button>
+      </div>
+      <div id="applicantModalBody"></div>
+    </div>
+  </div>
 
 
   <div class="modal hidden" id="adminLoginModal" role="dialog" aria-modal="true">

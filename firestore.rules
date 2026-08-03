@@ -21,5 +21,12 @@ service cloud.firestore {
         request.auth != null &&
         request.auth.token.email == "badri.bagagoshvili@gmail.com";
     }
+    match /pageVisits/{visitId} {
+      allow create: if request.resource.data.createdAt is string;
+      allow read, update, delete: if
+        request.auth != null &&
+        request.auth.token.email == "badri.bagagoshvili@gmail.com";
+    }
+
   }
 }
