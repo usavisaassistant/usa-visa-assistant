@@ -6,3 +6,5 @@ GitHub/Vercel-ის მთავარ საქაღალდეში ატ
 https://www.usavisahelp.uk/interview-game.html
 
 მთავარი გვერდის ღილაკის დასაკავშირებლად გამოიყენეთ უკვე მოცემული game-launcher.js ან ღილაკს href="interview-game.html" მიუთითეთ.
+
+Redeploy trigger: restored original interview simulator.
